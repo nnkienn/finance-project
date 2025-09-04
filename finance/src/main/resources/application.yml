@@ -1,0 +1,43 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://ep-shy-sun-a1ilq5j5-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+    username: neondb_owner
+    password: 'npg_MRuK1x5aOHgw'
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    org.springframework.security.web.access: DEBUG
+    org.springframework.security.web.access.intercept: TRACE
+    org.springframework.web: DEBUG
+
+app:
+  jwt:
+    base64-secret: Lx28C1P6FJvJZp3SkX5y2y4j3KX3iU7+M7XAZmUjB6c=
+    access-token-validity-seconds: 900
+    refresh-token-validity-seconds: 604800
+  verification:
+    expire-minutes: 60
