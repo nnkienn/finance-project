@@ -1,0 +1,51 @@
+# ----------------------------
+# Global
+# ----------------------------
+*.log
+*.env
+*.DS_Store
+*.idea/
+*.iml
+*.swp
+*.swo
+node_modules/
+dist/
+tmp/
+out/
+coverage/
+
+# ----------------------------
+# Backend (Spring Boot)
+# ----------------------------
+/backend/target/
+/backend/.mvn/
+/backend/.gradle/
+/backend/build/
+/backend/.classpath
+/backend/.project
+/backend/.settings/
+/backend/.factorypath
+
+# Ignore application secrets
+/backend/src/main/resources/application-*.yml
+/backend/src/main/resources/application-*.properties
+
+# ----------------------------
+# Frontend (Next.js)
+# ----------------------------
+/frontend/.next/
+/frontend/node_modules/
+/frontend/out/
+/frontend/.vercel/
+/frontend/.turbo/
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+
+# ----------------------------
+# OS generated
+# ----------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
