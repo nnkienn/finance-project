@@ -13,14 +13,12 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // 👉 demo: chỉ log ra console, bạn tự xử lý API sau
     console.log("Login:", { email, password });
     router.push("/homepage");
   };
 
   const handleGoogle = () => {
     setSocialLoading("google");
-    // 👉 demo: redirect giả
     console.log("Redirect to Google OAuth...");
     setTimeout(() => {
       router.push("/homepage?social=1");
@@ -28,59 +26,75 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-screen items-center justify-center bg-gray-200 p-4">
-      <div className="flex flex-col md:flex-row w-full max-w-5xl bg-white rounded-2xl shadow-lg overflow-hidden">
-        {/* RIGHT - Image */}
-        <div className="md:w-1/2 hidden md:block">
-          <img
-            src="/images/login.png"
-            alt="Login illustration"
-            className="object-cover w-full h-full"
-          />
+    <div
+      className="flex min-h-screen w-screen items-center justify-center bg-cover bg-center p-4"
+      style={{
+        backgroundImage:
+          "url('https://ps-web-assets.s3.us-west-1.amazonaws.com/images/login/bg.jpg?v1-71ef4d00bba4f833b5b7818d3cea52d1')",
+      }}
+    >
+      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-2xl overflow-hidden">
+        {/* LEFT - Slogan */}
+        <div className="hidden md:flex md:w-1/2 items-center justify-center p-10">
+          <h2 className="text-3xl font-bold text-white drop-shadow-lg leading-snug">
+            Be productive with <br /> your money, your way.
+          </h2>
         </div>
 
-        {/* LEFT - Form */}
-        <div className="md:w-1/2 w-full p-8 md:p-10 flex flex-col justify-center">
-          <h1 className="md:text-3xl text-gray-700 font-bold mb-4">Welcome!</h1>
+        {/* RIGHT - Form */}
+        <div className="md:w-1/2 w-full p-8 md:p-10 flex flex-col justify-center 
+                        bg-white/80 backdrop-blur-md rounded-2xl shadow-lg">
+          <h1 className="md:text-3xl text-gray-800 font-bold mb-4 text-center">
+            Sign in to Kinance
+          </h1>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <span className="block px-2 text-gray-400 text-sm">Email</span>
+              <span className="block px-2 text-gray-500 text-sm">Email</span>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-2 w-full border-gray-200 rounded-2xl px-4 py-2 text-gray-600"
+                className="border w-full border-gray-300 rounded-xl px-4 py-2 text-gray-700 focus:ring-2 focus:ring-purple-500 outline-none"
               />
             </div>
 
             <div>
-              <span className="block px-2 text-gray-400 text-sm">Password</span>
+              <span className="block px-2 text-gray-500 text-sm">Password</span>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-2 w-full border-gray-200 rounded-2xl px-4 py-2 text-gray-600"
+                className="border w-full border-gray-300 rounded-xl px-4 py-2 text-gray-700 focus:ring-2 focus:ring-purple-500 outline-none"
               />
+              <div className="mt-2 text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-purple-600 hover:underline font-medium"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             <button
               type="submit"
-              className="w-full rounded-2xl px-4 py-2 text-white font-bold bg-green-500 hover:bg-green-700 transition"
+              className="w-full rounded-full px-4 py-2 text-white font-bold bg-purple-700 hover:bg-purple-800 transition"
             >
-              Login
+              Sign In
             </button>
           </form>
 
           {/* Register link */}
           <div className="mt-6 text-center">
-            <Link href="/signup">
-              <span className="text-sm text-gray-500">
-                If you don’t have an account?{" "}
-              </span>
-              <span className="text-sm text-green-600 font-semibold underline">
-                Please register here
-              </span>
+            <span className="text-sm text-gray-600">
+              If you don’t have an account?{" "}
+            </span>
+            <Link
+              href="/signup"
+              className="text-sm text-green-600 font-semibold underline"
+            >
+              Please register here
             </Link>
           </div>
 
@@ -92,25 +106,19 @@ export default function LoginPage() {
           </div>
 
           {/* Social Login */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              disabled
-              className="flex-1 flex items-center justify-center space-x-2 text-gray-400 rounded-md border px-4 py-2 bg-gray-50 cursor-not-allowed"
-              title="Coming soon"
-            >
-              <img src="/images/facebook.jpg" alt="facebook" className="h-5 w-5" />
-              <span>Login with Facebook</span>
-            </button>
-
+          <div className="mt-6">
             <button
               type="button"
               onClick={handleGoogle}
               disabled={!!socialLoading}
-              className="flex-1 flex items-center justify-center space-x-2 text-gray-700 rounded-md border px-4 py-2 hover:bg-gray-50"
+              className="w-full flex items-center justify-center gap-2 text-gray-700 font-medium border rounded-full px-4 py-2 hover:bg-gray-50"
             >
               <img src="/images/google.png" alt="google" className="h-5 w-5" />
-              <span>{socialLoading === "google" ? "Redirecting..." : "Login with Google"}</span>
+              <span>
+                {socialLoading === "google"
+                  ? "Redirecting..."
+                  : "Login with Google"}
+              </span>
             </button>
           </div>
         </div>
