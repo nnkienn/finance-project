@@ -1,27 +1,25 @@
 package com.finance.transaction.entity;
 
+
+
+import jakarta.persistence.*;
+import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.finance.auth.entity.User;
+import com.finance.category.entity.UserCategory;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+
 
 @Entity
-@Table(name = "transactions")
+@Table(
+    name = "transactions",
+    indexes = {
+        @Index(name = "idx_transactions_user_date", columnList = "user_id, transactionDate"),
+        @Index(name = "idx_transactions_type", columnList = "type")
+    }
+)
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public class Transaction {
@@ -29,17 +27,50 @@ public class Transaction {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	private BigDecimal amount;
-	
-	private LocalDateTime date = LocalDateTime.now();
-	
-	private String note;
+	@Column(nullable = false, precision = 15,scale = 2)
+	private BigDecimal amount; 
 	
 	@Enumerated(EnumType.STRING)
-	private PaymentMethod method;
+	@Column(nullable = false, length = 20)
+	private TransactionType type;
+	
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30, nullable = false)
+    private PaymentMethod paymentMethod = PaymentMethod.CASH;
+    
+    @Column(length = 30, nullable = false)
+    private String note;
+    
+    @Column(nullable = false)
+    private LocalDateTime transactionDate = LocalDateTime.now();
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_category_id", nullable = false)
+    private UserCategory userCategory;
+    
+    private boolean recurring = false;
+    
+    private boolean activeRecurring = true;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private RecurringFrequency frequency;
+    
+    private LocalDateTime startDate;
+    
+    private LocalDateTime endDate;
+    
+    private LocalDateTime nextRunTime;
+    
 
 	
-	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
+	
+	
+	
+	
 }
