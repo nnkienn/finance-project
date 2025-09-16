@@ -5,13 +5,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import com.finance.auth.entity.User;
+import com.finance.category.entity.UserCategory;
 import com.finance.transaction.entity.PaymentMethod;
 import com.finance.transaction.entity.Transaction;
 import com.finance.transaction.entity.TransactionType;
 
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+public interface TransactionRepository extends JpaRepository<Transaction, Long> , JpaSpecificationExecutor<Transaction> {
 
 	// Pharse 1: CRUD & FILTER
 	List<Transaction> findByUserId(Long userId);
@@ -26,38 +30,44 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
 	// Pharse 2 : Analystics
 
-	@Query("SELECT COALESCE(SUM(t.amount),0) FROM Transaction t " + "WHERE t.user.id = :userId AND t.type = :type "
-			+ "AND t.transactionDate BETWEEN :start AND :end")
-	BigDecimal sumAmountByUserAndTypeAndDateRange(Long userId, TransactionType type, LocalDateTime start,
-			LocalDateTime end);
+    // 2. Latest transactions
+    List<Transaction> findTop5ByUserOrderByTransactionDateDesc(User user);
 
-	@Query("SELECT t.userCategory.name, SUM(t.amount) " + "FROM Transaction t "
-			+ "WHERE t.user.id = :userId AND t.transactionDate BETWEEN :start AND :end "
-			+ "GROUP BY t.userCategory.name")
-	List<Object[]> getCategoryBreakdown(Long userId, LocalDateTime start, LocalDateTime end);
-	
-	 // Breakdown theo payment method
-    @Query("SELECT t.paymentMethod, SUM(t.amount) " +
-           "FROM Transaction t " +
-           "WHERE t.user.id = :userId AND t.transactionDate BETWEEN :start AND :end " +
-           "GROUP BY t.paymentMethod")
-    List<Object[]> getPaymentMethodBreakdown(Long userId, LocalDateTime start, LocalDateTime end);
-    
-	// Pharse 3: Recuring
-    
-    // Lấy các transaction recurring đang active
-    List<Transaction> findByUserIdAndRecurringTrueAndActiveRecurringTrue(Long userId);
-    
-    // Lấy các transaction recurring cần chạy (nextRunTime <= now)
-    List<Transaction> findByRecurringTrueAndActiveRecurringTrueAndNextRunTimeBefore(LocalDateTime now);
+    @Query("SELECT t.type, SUM(t.amount) FROM Transaction t " +
+            "WHERE t.user = :user " +
+            "AND MONTH(t.transactionDate) = :month " +
+            "AND YEAR(t.transactionDate) = :year " +
+            "GROUP BY t.type")
+     List<Object[]> getMonthlySummary(
+             @Param("user") User user,
+             @Param("month") int month,
+             @Param("year") int year
+     );
+     
+     @Query("SELECT t.userCategory.name, SUM(t.amount) FROM Transaction t " +
+             "WHERE t.user = :user " +
+             "AND t.type = com.finance.transaction.entity.TransactionType.EXPENSE " +
+             "AND MONTH(t.transactionDate) = :month " +
+             "AND YEAR(t.transactionDate) = :year " +
+             "GROUP BY t.userCategory.name")
+      List<Object[]> getCategoryBreakdown(
+              @Param("user") User user,
+              @Param("month") int month,
+              @Param("year") int year
+      );
 
-   // Pharse 4: Export csv
-    // Lấy danh sách transaction trong khoảng thời gian (dùng cho export CSV/PDF)
-    List<Transaction> findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(
-            Long userId,
-            LocalDateTime start,
-            LocalDateTime end
-    );
+      // 5. Payment method breakdown
+      @Query("SELECT t.paymentMethod, SUM(t.amount) FROM Transaction t " +
+             "WHERE t.user = :user " +
+             "AND MONTH(t.transactionDate) = :month " +
+             "AND YEAR(t.transactionDate) = :year " +
+             "GROUP BY t.paymentMethod")
+      List<Object[]> getPaymentMethodBreakdown(
+              @Param("user") User user,
+              @Param("month") int month,
+              @Param("year") int year
+      );
+
     
 
 }

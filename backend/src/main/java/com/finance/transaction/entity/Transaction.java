@@ -10,12 +10,13 @@ import com.finance.category.entity.UserCategory;
 
 @Entity
 @Table(
-    name = "transactions",
-    indexes = {
-        @Index(name = "idx_transactions_user_date", columnList = "user_id, date"),
-        @Index(name = "idx_transactions_type", columnList = "type")
-    }
-)
+	    name = "transactions",
+	    indexes = {
+	        @Index(name = "idx_transactions_user_date", columnList = "user_id, transaction_date"),
+	        @Index(name = "idx_transactions_type", columnList = "type")
+	    }
+	)
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -40,8 +41,9 @@ public class Transaction {
     @Column(length = 255, nullable = false)
     private String note;
 
-    @Column(name = "date", nullable = false)
+    @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate = LocalDateTime.now();
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
