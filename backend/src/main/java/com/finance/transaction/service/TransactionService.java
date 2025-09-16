@@ -130,6 +130,7 @@ public class TransactionService {
             category = userCategoryRepository.findById(categoryId)
                     .orElseThrow(() -> new RuntimeException("Category not found"));
         }
+        System.out.println("DEBUG >>> Enum method=" + paymentMethod);
 
         return transactionRepository.findAll(
                 TransactionSpecification.withFilters(user, startDate, endDate, type, category, paymentMethod)

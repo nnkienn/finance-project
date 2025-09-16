@@ -1,6 +1,5 @@
 package com.finance.transaction.repository;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.finance.auth.entity.User;
-import com.finance.category.entity.UserCategory;
 import com.finance.transaction.entity.PaymentMethod;
 import com.finance.transaction.entity.Transaction;
 import com.finance.transaction.entity.TransactionType;
