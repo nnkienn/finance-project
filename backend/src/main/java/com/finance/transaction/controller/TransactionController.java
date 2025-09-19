@@ -95,7 +95,7 @@ public class TransactionController {
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) PaymentMethod paymentMethod,
-            Pageable pageable
+            Pageable pageable 
     ) {
         return ResponseEntity.ok(
                 transactionService.getTransactionsFilteredPaged(startDate, endDate, type, categoryId, paymentMethod, pageable)

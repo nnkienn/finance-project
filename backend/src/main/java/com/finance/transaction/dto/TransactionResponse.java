@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class TransactionResponse {
-	private Long id;
+    private Long id;
     private BigDecimal amount;
     private TransactionType type;
     private PaymentMethod paymentMethod;
@@ -24,7 +24,6 @@ public class TransactionResponse {
     private String categoryName;
     private String categoryIcon;
 
-    private boolean recurring;
-    private boolean activeRecurring;
-    private String frequency;
+    // NEW: nếu giao dịch sinh từ recurring occurrence, trả id để UI hiển thị nguồn
+    private Long recurringOccurrenceId;
 }

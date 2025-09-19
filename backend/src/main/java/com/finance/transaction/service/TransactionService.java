@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.finance.auth.entity.User;
-import com.finance.auth.repository.UserRepository;
 import com.finance.auth.util.SecurityUtils;
 import com.finance.category.entity.UserCategory;
 import com.finance.category.repository.UserCategoryRepository;
@@ -27,19 +26,25 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import lombok.RequiredArgsConstructor;
+
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
+
     private final TransactionRepository transactionRepository;
     private final UserCategoryRepository userCategoryRepository;
 
-    // ================== PHASE 1 ==================
+    // ================== CRUD ==================
 
+    @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
         User user = SecurityUtils.getCurrentUser();
 
-        UserCategory userCategory = userCategoryRepository.findById(request.getUserCategoryId())
-                .orElseThrow(() -> new RuntimeException("UserCategory not found with id " + request.getUserCategoryId()));
+        // Bảo vệ: category phải thuộc đúng user
+        UserCategory userCategory = userCategoryRepository
+                .findByIdAndUserId(request.getUserCategoryId(), user.getId())
+                .orElseThrow(() -> new RuntimeException(
+                        "UserCategory không thuộc user (id=" + request.getUserCategoryId() + ")"));
 
         Transaction transaction = new Transaction();
         transaction.setAmount(request.getAmount());
@@ -54,13 +59,7 @@ public class TransactionService {
         transaction.setUser(user);
         transaction.setUserCategory(userCategory);
 
-        // Recurring
-        transaction.setRecurring(request.isRecurring());
-        transaction.setActiveRecurring(request.isActiveRecurring());
-        transaction.setFrequency(request.getFrequency());
-        transaction.setStartDate(request.getStartDate());
-        transaction.setEndDate(request.getEndDate());
-        transaction.setNextRunTime(request.getNextRunTime());
+        // KHÔNG còn set các field recurring (đã bỏ)
 
         return TransactionMapper.toResponse(transactionRepository.save(transaction));
     }
@@ -82,8 +81,21 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse updateTransaction(Long id, TransactionRequest request) {
+        User user = SecurityUtils.getCurrentUser();
+
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found with id " + id));
+
+        // Nếu người dùng đổi category, đảm bảo category mới thuộc user hiện tại
+        if (request.getUserCategoryId() != null
+                && (transaction.getUserCategory() == null
+                    || !request.getUserCategoryId().equals(transaction.getUserCategory().getId()))) {
+            UserCategory newCat = userCategoryRepository
+                    .findByIdAndUserId(request.getUserCategoryId(), user.getId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "UserCategory không thuộc user (id=" + request.getUserCategoryId() + ")"));
+            transaction.setUserCategory(newCat);
+        }
 
         transaction.setAmount(request.getAmount());
         transaction.setType(request.getType());
@@ -95,12 +107,7 @@ public class TransactionService {
                 request.getTransactionDate() != null ? request.getTransactionDate() : transaction.getTransactionDate()
         );
 
-        transaction.setRecurring(request.isRecurring());
-        transaction.setActiveRecurring(request.isActiveRecurring());
-        transaction.setFrequency(request.getFrequency());
-        transaction.setStartDate(request.getStartDate());
-        transaction.setEndDate(request.getEndDate());
-        transaction.setNextRunTime(request.getNextRunTime());
+        // KHÔNG còn set các field recurring (đã bỏ)
 
         return TransactionMapper.toResponse(transactionRepository.save(transaction));
     }
@@ -113,9 +120,7 @@ public class TransactionService {
         transactionRepository.deleteById(id);
     }
 
-    // ================== PHASE 2 ==================
-
-    // ================== FILTER ==================
+    // ================== FILTER & ANALYTICS ==================
 
     @Transactional(readOnly = true)
     public List<TransactionResponse> getTransactionsFiltered(LocalDateTime startDate,
@@ -127,19 +132,15 @@ public class TransactionService {
         UserCategory category = null;
 
         if (categoryId != null) {
-            category = userCategoryRepository.findById(categoryId)
-                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            category = userCategoryRepository.findByIdAndUserId(categoryId, user.getId())
+                    .orElseThrow(() -> new RuntimeException("Category không thuộc user"));
         }
-        System.out.println("DEBUG >>> Enum method=" + paymentMethod);
 
         return transactionRepository.findAll(
                 TransactionSpecification.withFilters(user, startDate, endDate, type, category, paymentMethod)
-        ).stream()
-         .map(TransactionMapper::toResponse)
-         .collect(Collectors.toList());
+        ).stream().map(TransactionMapper::toResponse).collect(Collectors.toList());
     }
 
-    // Optional: hỗ trợ phân trang
     @Transactional(readOnly = true)
     public Page<TransactionResponse> getTransactionsFilteredPaged(LocalDateTime startDate,
                                                                   LocalDateTime endDate,
@@ -151,8 +152,8 @@ public class TransactionService {
         UserCategory category = null;
 
         if (categoryId != null) {
-            category = userCategoryRepository.findById(categoryId)
-                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            category = userCategoryRepository.findByIdAndUserId(categoryId, user.getId())
+                    .orElseThrow(() -> new RuntimeException("Category không thuộc user"));
         }
 
         return transactionRepository.findAll(

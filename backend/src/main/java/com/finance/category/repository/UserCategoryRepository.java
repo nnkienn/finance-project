@@ -21,5 +21,8 @@ public interface UserCategoryRepository extends JpaRepository<UserCategory, Long
 
     // Tìm category theo user và tên (để search nhanh)
     Optional<UserCategory> findByUserAndName(User user, String name);
+    
+    Optional<UserCategory> findByIdAndUserId(Long id, Long userId);
+
 
 }
