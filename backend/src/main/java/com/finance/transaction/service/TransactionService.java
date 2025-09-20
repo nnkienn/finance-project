@@ -21,6 +21,7 @@ import com.finance.transaction.entity.PaymentMethod;
 import com.finance.transaction.entity.Transaction;
 import com.finance.transaction.entity.TransactionSpecification;
 import com.finance.transaction.entity.TransactionType;
+import com.finance.transaction.port.RecurringPostingPort;
 import com.finance.transaction.repository.TransactionRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class TransactionService {
+public class TransactionService implements RecurringPostingPort {
 
     private final TransactionRepository transactionRepository;
     private final UserCategoryRepository userCategoryRepository;
@@ -200,4 +201,20 @@ public class TransactionService {
         }
         return breakdown;
     }
+
+	@Override
+	@Transactional
+	public Transaction postFromRecurring(User user, UserCategory category, BigDecimal amount, LocalDateTime when,
+			String note, PaymentMethod method, TransactionType type) {
+		 Transaction tx = new Transaction();
+		    tx.setUser(user);
+		    tx.setUserCategory(category);
+		    tx.setAmount(amount);
+		    tx.setType(type != null ? type : TransactionType.EXPENSE); // mặc định chi
+		    tx.setPaymentMethod(method != null ? method : PaymentMethod.BANK);
+		    tx.setNote(note);
+		    tx.setTransactionDate(when);
+
+		    return transactionRepository.save(tx);
+	}
 }
