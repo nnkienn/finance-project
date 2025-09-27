@@ -1,20 +1,39 @@
 "use client";
 
+import { useAppDispatch } from "@/hook/useAppDispatch";
+import { useAppSelector } from "@/hook/useAppSelector";
+import { loginUser, meUser } from "@/store/slice/authSlice";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const { loading, error } = useAppSelector((state) => state.auth);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [socialLoading, setSocialLoading] = useState<"google" | "facebook" | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login:", { email, password });
-    router.push("/homepage");
+    try {
+      // 1. gọi loginUser -> lấy accessToken
+      const loginRes = await dispatch(loginUser({ email, password })).unwrap();
+
+      if (loginRes?.accessToken) {
+        // 2. gọi meUser -> lấy thông tin user
+        await dispatch(meUser()).unwrap();
+
+        // 3. chuyển sang homepage
+        router.push("/homepage");
+      }
+    } catch (err: any) {
+      console.error("Login failed:", err);
+    }
   };
 
   const handleGoogle = () => {
@@ -55,6 +74,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
                 className="border w-full border-gray-300 rounded-xl px-4 py-2 text-gray-700 focus:ring-2 focus:ring-purple-500 outline-none"
               />
             </div>
@@ -65,6 +85,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
                 className="border w-full border-gray-300 rounded-xl px-4 py-2 text-gray-700 focus:ring-2 focus:ring-purple-500 outline-none"
               />
               <div className="mt-2 text-right">
@@ -79,10 +100,15 @@ export default function LoginPage() {
 
             <button
               type="submit"
+              disabled={loading}
               className="w-full rounded-full px-4 py-2 text-white font-bold bg-purple-700 hover:bg-purple-800 transition"
             >
-              Sign In
+              {loading ? "Signing in..." : "Sign In"}
             </button>
+
+            {error && (
+              <p className="text-red-500 text-sm text-center mt-2">{error}</p>
+            )}
           </form>
 
           {/* Register link */}

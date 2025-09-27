@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="70" height="44" viewBox="0 0 70 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="44">
+      <stop offset="0" stop-color="#FFD79A"/>
+      <stop offset="1" stop-color="#FFB667"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="44">
+      <stop offset="0" stop-color="#FFC065"/>
+      <stop offset="1" stop-color="#FF8A00"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0" y1="0" x2="0" y2="44">
+      <stop offset="0" stop-color="#FFA040"/>
+      <stop offset="1" stop-color="#FF6A00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- subtle glass plate -->
+  <rect x="0" y="0" width="70" height="44" rx="10" fill="white" fill-opacity="0.16"/>
+  <g transform="translate(10,7) rotate(-12 25 15)">
+    <rect x="0"  y="5"  width="14" height="22" rx="4" fill="url(#g1)"/>
+    <rect x="16" y="5"  width="14" height="22" rx="4" fill="url(#g2)"/>
+    <rect x="32" y="5"  width="14" height="22" rx="4" fill="url(#g3)"/>
+  </g>
+</svg>
