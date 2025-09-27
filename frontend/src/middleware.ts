@@ -1,12 +1,14 @@
+// src/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const at = req.cookies.get("accessToken")?.value; // 👈 check access token
+  const at = req.cookies.get("accessToken")?.value;
   const { pathname } = req.nextUrl;
 
   const isAuthPage =
     pathname.startsWith("/signin") || pathname.startsWith("/signup");
-  const isProtected = pathname.startsWith("/homepage");
+  const isProtected =
+    pathname.startsWith("/homepage") || pathname.startsWith("/categories");
 
   // chưa login mà vào protected route
   if (!at && isProtected) {
@@ -26,5 +28,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/signin", "/signup", "/homepage/:path*","/categories/:path*"],
+  matcher: ["/signin", "/signup", "/homepage/:path*", "/categories/:path*"],
 };

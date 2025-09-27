@@ -1,5 +1,5 @@
 // src/service/authService.ts
-import api from "@/lib/api";
+import api from "./apiService";
 import axios, { AxiosError } from "axios";
 
 interface ApiError {
@@ -7,9 +7,9 @@ interface ApiError {
 }
 
 export interface AuthResponse {
-  tokenType: string;
-  accessToken: string;
-  expiresIn: number;
+  tokenType: string;   // "Bearer"
+  accessToken: string; // JWT
+  expiresIn: number;   // seconds
 }
 
 export interface MeResponse {

@@ -1,5 +1,5 @@
 // src/service/masterCategoryService.ts
-import api from "@/lib/api";
+import api from "./apiService";
 import { MasterCategory } from "@/type/Mastercategory";
 
 export const getMasterCategories = async (type?: "EXPENSE" | "INCOME" | "SAVING") => {

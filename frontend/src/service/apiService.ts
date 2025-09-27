@@ -8,10 +8,10 @@ interface CustomAxiosRequestConfig extends AxiosRequestConfig {
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080",
-  withCredentials: true, // ⚡ để refresh_token cookie gửi đi
+  withCredentials: true, // cookie refresh_token gửi kèm
 });
 
-// ---------------- Request: gắn accessToken ----------------
+// ---------------- Request Interceptor ----------------
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const raw = localStorage.getItem("auth");
@@ -22,13 +22,15 @@ api.interceptors.request.use((config) => {
           config.headers = config.headers || {};
           (config.headers as any).Authorization = `Bearer ${accessToken}`;
         }
-      } catch {}
+      } catch {
+        console.warn("❌ Failed to parse accessToken from localStorage");
+      }
     }
   }
   return config;
 });
 
-// ---------------- Response: auto refresh khi 401 ----------------
+// ---------------- Response Interceptor ----------------
 let isRefreshing = false;
 let waitQueue: Array<(token: string | null) => void> = [];
 
@@ -40,18 +42,14 @@ function flushQueue(newToken: string | null) {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const status = error?.response?.status as number | undefined;
-    const original = (error?.config || {}) as CustomAxiosRequestConfig;
+    const status = error?.response?.status;
+    const original = error?.config as CustomAxiosRequestConfig;
 
     if (!original) return Promise.reject(error);
+    const isRefreshCall = (original.url || "").includes("/auth/refresh");
 
-    const url = (original.url || "").toString();
-    const isRefreshCall = url.includes("/auth/refresh");
-
-    // Nếu token hết hạn → refresh
     if (status === 401 && !original._retry && !isRefreshCall) {
       if (isRefreshing) {
-        // Nếu đang refresh → chờ xong
         return new Promise((resolve, reject) => {
           waitQueue.push((token) => {
             if (!token) return reject(error);
@@ -70,18 +68,15 @@ api.interceptors.response.use(
         const newAccessToken = res?.accessToken;
 
         if (newAccessToken) {
-          // cập nhật localStorage
           if (typeof window !== "undefined") {
             const raw = localStorage.getItem("auth");
             const obj = raw ? JSON.parse(raw) : {};
             obj.accessToken = newAccessToken;
             localStorage.setItem("auth", JSON.stringify(obj));
 
-            // cập nhật cookie cho middleware Next.js
             document.cookie = `accessToken=${newAccessToken}; path=/;`;
           }
 
-          // update queue & retry request cũ
           api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
           flushQueue(newAccessToken);
 
@@ -91,15 +86,12 @@ api.interceptors.response.use(
         }
 
         flushQueue(null);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("auth");
-        }
         return Promise.reject(error);
       } catch (e) {
         flushQueue(null);
         if (typeof window !== "undefined") {
           localStorage.removeItem("auth");
-          document.cookie = "accessToken=; Max-Age=0; path=/;"; // clear cookie
+          document.cookie = "accessToken=; Max-Age=0; path=/;";
         }
         return Promise.reject(e);
       } finally {
