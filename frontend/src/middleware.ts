@@ -5,10 +5,14 @@ export function middleware(req: NextRequest) {
   const at = req.cookies.get("accessToken")?.value;
   const { pathname } = req.nextUrl;
 
-  const isAuthPage =
-    pathname.startsWith("/signin") || pathname.startsWith("/signup");
+  const isAuthPage = ["/signin", "/signup"].some((p) =>
+    pathname.startsWith(p)
+  );
+
   const isProtected =
-    pathname.startsWith("/homepage") || pathname.startsWith("/category");
+    pathname.startsWith("/homepage") ||
+    pathname.startsWith("/category") ||
+    pathname.startsWith("/my-categories"); // 👈 thêm nếu có page user categories
 
   // chưa login mà vào protected route
   if (!at && isProtected) {
@@ -28,5 +32,11 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/signin", "/signup", "/homepage/:path*", "/category/:path*"],
+  matcher: [
+    "/signin",
+    "/signup",
+    "/homepage/:path*",
+    "/category/:path*",
+    "/my-categories/:path*", // 👈 optional
+  ],
 };

@@ -1,6 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 interface CategoryCardProps {
+  id: number;
   icon?: string;
   name?: string;
   type?: "EXPENSE" | "INCOME" | "SAVING";
@@ -12,9 +15,14 @@ const badgeStyle: Record<string, string> = {
   SAVING: "bg-indigo-50 text-indigo-600",
 };
 
-export default function CategoryCard({ icon, name, type }: CategoryCardProps) {
+export default function CategoryCard({ id, icon, name, type }: CategoryCardProps) {
+  const router = useRouter();
+
   return (
-    <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm hover:shadow-md transition flex flex-col">
+    <div
+      onClick={() => router.push(`/category/${id}`)}
+      className="cursor-pointer border border-gray-200 rounded-2xl p-5 bg-white shadow-sm hover:shadow-md transition flex flex-col"
+    >
       {/* Icon + Title */}
       <div className="flex flex-col items-start space-y-3">
         <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-50 text-2xl">
