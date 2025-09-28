@@ -4,10 +4,10 @@ import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
-import RightSidebar from "@/components/layout/category/MasterRightSidebar";
-import CategorySearchFilter from "@/components/layout/category/MasterCategorySearchFilter";
-import PopularCategories from "@/components/layout/category/MasterPopularCategories";
-import CategoryGrid from "@/components/layout/category/MasterCategoryGrid";
+import RightSidebar from "@/components/layout/masterCategory/MasterRightSidebar";
+import CategorySearchFilter from "@/components/layout/masterCategory/MasterCategorySearchFilter";
+import PopularCategories from "@/components/layout/masterCategory/MasterPopularCategories";
+import CategoryGrid from "@/components/layout/masterCategory/MasterCategoryGrid";
 import { fetchMasterCategories } from "@/store/slice/masterCategorySlice";
 
 export default function Homepage() {

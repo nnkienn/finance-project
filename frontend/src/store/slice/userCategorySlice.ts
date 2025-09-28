@@ -11,6 +11,11 @@ export const fetchUserCategories = createAsyncThunk(
   async () => await service.getUserCategories()
 );
 
+export const fetchUserCategoriesByMaster = createAsyncThunk(
+  "userCategories/fetchByMaster",
+  async (masterId: number) => await service.getUserCategoriesByMaster(masterId)
+);
+
 export const addUserCategory = createAsyncThunk(
   "userCategories/create",
   async (data: { name: string; icon?: string; masterCategoryId: number }) =>
@@ -89,6 +94,15 @@ const userCategorySlice = createSlice({
         state.loading = false;
         state.error = action.error.message || "Failed to load user categories";
       })
+
+      // fetchByMaster
+      .addCase(
+        fetchUserCategoriesByMaster.fulfilled,
+        (state, action: PayloadAction<UserCategory[]>) => {
+          state.items = action.payload;
+        }
+      )
+
       // create
       .addCase(
         addUserCategory.fulfilled,
@@ -96,6 +110,7 @@ const userCategorySlice = createSlice({
           state.items.push(action.payload);
         }
       )
+
       // update
       .addCase(
         editUserCategory.fulfilled,
@@ -104,6 +119,7 @@ const userCategorySlice = createSlice({
           if (idx >= 0) state.items[idx] = action.payload;
         }
       )
+
       // delete
       .addCase(
         removeUserCategory.fulfilled,
@@ -111,6 +127,7 @@ const userCategorySlice = createSlice({
           state.items = state.items.filter((c) => c.id !== action.payload);
         }
       )
+
       // filter
       .addCase(
         filterUserCategory.fulfilled,
@@ -118,6 +135,7 @@ const userCategorySlice = createSlice({
           state.items = action.payload;
         }
       )
+
       // search
       .addCase(
         searchUserCategory.fulfilled,
@@ -125,6 +143,7 @@ const userCategorySlice = createSlice({
           state.items = action.payload;
         }
       )
+
       // import default
       .addCase(
         importDefaultUserCategory.fulfilled,
