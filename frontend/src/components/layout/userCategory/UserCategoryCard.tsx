@@ -10,24 +10,26 @@ interface Props {
 
 export default function UserCategoryCard({ category, onEdit, onDelete }: Props) {
   return (
-    <div className="border rounded-lg p-4 flex justify-between items-center hover:shadow">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{category.icon}</span>
-        <div>
-          <p className="font-medium">{category.name}</p>
-          <p className="text-xs text-gray-500">Master #{category.masterCategoryId}</p>
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+      {/* Icon + Name */}
+      <div className="flex flex-col items-start space-y-3">
+        <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-50 text-2xl">
+          {category.icon}
         </div>
+        <p className="font-medium text-gray-900 text-base">{category.name}</p>
       </div>
-      <div className="flex gap-2">
+
+      {/* Actions */}
+      <div className="flex gap-2 mt-4">
         <button
           onClick={() => onEdit(category)}
-          className="px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded"
+          className="flex-1 px-3 py-1.5 text-sm rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
         >
           Edit
         </button>
         <button
           onClick={() => onDelete(category.id)}
-          className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded"
+          className="flex-1 px-3 py-1.5 text-sm rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
         >
           Delete
         </button>

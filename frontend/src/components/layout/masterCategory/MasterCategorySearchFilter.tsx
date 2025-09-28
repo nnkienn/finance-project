@@ -7,15 +7,20 @@ interface Props {
   setFilter: (v: "ALL" | "EXPENSE" | "INCOME" | "SAVING") => void;
 }
 
-export default function CategorySearchFilter({ search, setSearch, filter, setFilter }: Props) {
+export default function CategorySearchFilter({
+  search,
+  setSearch,
+  filter,
+  setFilter,
+}: Props) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+    <div className="flex flex-wrap items-center justify-between mb-6 gap-3">
       {/* Search */}
-      <div className="relative w-full sm:w-1/2">
+      <div className="relative flex-1 min-w-[200px] max-w-sm">
         <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
         <input
           type="text"
-          placeholder="Tìm category..."
+          placeholder="Search categories..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-4 py-2 rounded-full border border-gray-200 bg-gray-50 
