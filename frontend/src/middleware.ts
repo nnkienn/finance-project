@@ -8,7 +8,7 @@ export function middleware(req: NextRequest) {
   const isAuthPage =
     pathname.startsWith("/signin") || pathname.startsWith("/signup");
   const isProtected =
-    pathname.startsWith("/homepage") || pathname.startsWith("/categories");
+    pathname.startsWith("/homepage") || pathname.startsWith("/category");
 
   // chưa login mà vào protected route
   if (!at && isProtected) {
@@ -28,5 +28,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/signin", "/signup", "/homepage/:path*", "/categories/:path*"],
+  matcher: ["/signin", "/signup", "/homepage/:path*", "/category/:path*"],
 };

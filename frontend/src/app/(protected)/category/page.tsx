@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";
-import NavbarPrivate from "@/components/layout/dashboard/NavbarPrivate";
+import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
 import RightSidebar from "@/components/layout/category/MasterRightSidebar";
 import CategorySearchFilter from "@/components/layout/category/MasterCategorySearchFilter";

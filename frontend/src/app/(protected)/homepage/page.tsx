@@ -1,5 +1,5 @@
 import CardInfo from "@/components/layout/dashboard/CardInfo";
-import NavbarPrivate from "@/components/layout/dashboard/NavbarPrivate";
+import NavbarPrivate from "@/components/layout/NavbarPrivate";
 
 export default function Homepage() {
   return (

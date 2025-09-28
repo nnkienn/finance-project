@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import {
   Search,
   LayoutGrid,
@@ -9,13 +10,14 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import SettingsMenu from "./SettingsMenu";
-import NotificationsMenu from "./NotificationsMenu";
+import SettingsMenu from "./dashboard/SettingsMenu";
+import NotificationsMenu from "./dashboard/NotificationsMenu";
 
 interface TabItem {
   id: string;
   label: string;
   icon: React.ReactNode;
+  link: string;
 }
 
 export default function NavbarPrivate() {
@@ -26,15 +28,16 @@ export default function NavbarPrivate() {
   );
 
   const tabs: TabItem[] = [
-    { id: "overview", label: "Overview", icon: <LayoutGrid size={16} /> },
-    { id: "transaction", label: "Transaction", icon: <Shuffle size={16} /> },
-    { id: "category", label: "Category", icon: <FileText size={16} /> },
-    { id: "activity", label: "Activity", icon: <Activity size={16} /> },
+    { id: "overview", label: "Overview", icon: <LayoutGrid size={16} />, link: "/homepage" },
+    { id: "transaction", label: "Transaction", icon: <Shuffle size={16} />, link: "/transaction" },
+    { id: "category", label: "Category", icon: <FileText size={16} />, link: "/category" },
+    { id: "activity", label: "Activity", icon: <Activity size={16} />, link: "/activity" },
   ];
 
   const renderTabButton = (tab: TabItem, mobile = false) => (
-    <button
+    <Link
       key={tab.id}
+      href={tab.link}
       onClick={() => {
         setActive(tab.id);
         if (mobile) setMobileOpen(false);
@@ -51,7 +54,7 @@ export default function NavbarPrivate() {
     >
       {tab.icon}
       {tab.label}
-    </button>
+    </Link>
   );
 
   return (
