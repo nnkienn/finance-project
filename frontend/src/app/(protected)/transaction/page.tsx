@@ -1,23 +1,60 @@
 "use client";
 
 import { useState } from "react";
+import { Transaction } from "@/type/transaction";
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
 import RightSidebar from "@/components/layout/transaction/TransactionRightSidebar";
 import TransactionSearchFilter from "@/components/layout/transaction/TransactionSearchFilter";
-import TransactionTable from "@/components/layout/transaction/TransactionTable";
+import TransactionModal from "@/components/layout/transaction/TransactionModal";
+import { Pencil } from "lucide-react";
 
 export default function Homepage() {
-  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([
+    {
+      id: 1,
+      description: "Lương tháng 9",
+      amount: 8000000,
+      date: "2025-09-10",
+      type: "EXPENSE",
+      category: "Salary",
+      paymentMethod: "Bank",
+    },
+    {
+      id: 2,
+      description: "Freelance project",
+      amount: 2500000,
+      date: "2025-09-12",
+      type: "INCOME",
+      category: "Work",
+      paymentMethod: "Cash",
+    },
+  ]);
 
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
+
+  // xuất file
   const handleExport = (type: "csv" | "pdf") => {
     console.log("Exporting as:", type);
     setShowExportMenu(false);
   };
 
-  const handleCreateTransaction = () => {
-    console.log("Redirect to create transaction form...");
-    window.location.href = "/transactions/create";
+  // lưu transaction (tạo mới hoặc update)
+  const handleSave = (tx: Transaction) => {
+    if (tx.id) {
+      // update
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === tx.id ? { ...tx } : t))
+      );
+    } else {
+      // create
+      setTransactions((prev) => [
+        ...prev,
+        { ...tx, id: prev.length ? prev[prev.length - 1].id! + 1 : 1 },
+      ]);
+    }
   };
 
   return (
@@ -57,8 +94,6 @@ export default function Homepage() {
             <div className="bg-white rounded-2xl shadow p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Transaction List</h2>
-
-                {/* Actions */}
                 <div className="flex items-center gap-3">
                   {/* Export */}
                   <div className="relative">
@@ -88,7 +123,10 @@ export default function Homepage() {
 
                   {/* Create */}
                   <button
-                    onClick={handleCreateTransaction}
+                    onClick={() => {
+                      setEditTx(null);
+                      setShowModal(true);
+                    }}
                     className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-medium hover:bg-pink-600 transition"
                   >
                     + Create Transaction
@@ -96,7 +134,72 @@ export default function Homepage() {
                 </div>
               </div>
 
-              <TransactionTable />
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full table-fixed text-sm text-left text-gray-600">
+                  <thead className="text-xs text-gray-500 uppercase border-b">
+                    <tr>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Note</th>
+                      <th className="px-4 py-3">Payment</th>
+                      <th className="px-4 py-3">Type</th>
+                      <th className="px-4 py-3 text-right">Amount</th>
+                      <th className="px-4 py-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((tx) => (
+                      <tr
+                        key={tx.id}
+                        className="border-b last:border-0 hover:bg-gray-50 transition"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {new Date(tx.date).toLocaleDateString("vi-VN")}
+                        </td>
+                        <td className="px-4 py-3 truncate">{tx.description}</td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
+                            {tx.paymentMethod}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-1 rounded-md text-xs font-medium ${
+                              tx.type === "EXPENSE"
+                                ? "bg-red-100 text-red-600"
+                                : tx.type === "INCOME"
+                                ? "bg-green-100 text-green-600"
+                                : "bg-yellow-100 text-yellow-600"
+                            }`}
+                          >
+                            {tx.type}
+                          </span>
+                        </td>
+                        <td
+                          className={`px-4 py-3 text-right font-semibold ${
+                            tx.type === "EXPENSE"
+                              ? "text-red-500"
+                              : "text-green-600"
+                          }`}
+                        >
+                          {tx.amount.toLocaleString("vi-VN")}đ
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => {
+                              setEditTx(tx);
+                              setShowModal(true);
+                            }}
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -106,6 +209,14 @@ export default function Homepage() {
           </div>
         </div>
       </main>
+
+      {/* Modal */}
+      <TransactionModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSave={handleSave}
+        initialData={editTx}
+      />
     </div>
   );
 }

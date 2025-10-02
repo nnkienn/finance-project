@@ -16,7 +16,7 @@ const transactions: Transaction[] = [
     id: 1,
     amount: 8000000,
     type: "EXPENSE",
-    paymentMethod: "BANK",
+    paymentMethod: "Bank",
     note: "Lương tháng 9",
     transactionDate: "2025-09-10T09:00:00",
   },
@@ -24,7 +24,7 @@ const transactions: Transaction[] = [
     id: 2,
     amount: 2500000,
     type: "INCOME",
-    paymentMethod: "CASH",
+    paymentMethod: "Cash",
     note: "Freelance project",
     transactionDate: "2025-09-12T09:00:00",
   },
@@ -34,6 +34,10 @@ export default function TransactionTable() {
   const handleEdit = (id: number) => {
     console.log("Edit transaction:", id);
     // mở modal edit hoặc redirect
+  };
+
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN").format(amount);
   };
 
   return (
@@ -87,17 +91,20 @@ export default function TransactionTable() {
               </td>
 
               {/* AMOUNT */}
-              <td
-                className={`px-4 py-3 text-right font-semibold ${
-                  tx.type === "EXPENSE" ? "text-red-500" : "text-green-600"
-                }`}
-              >
-                {tx.type === "EXPENSE" ? "-" : "+"}{" "}
-                {tx.amount.toLocaleString("vi-VN")}đ
+              <td className="px-4 py-3 text-right font-semibold">
+                <span
+                  className={`inline-flex items-center justify-end px-2 py-1 rounded-md text-sm font-medium ${
+                    tx.type === "EXPENSE"
+                      ? "bg-red-50 text-red-600"
+                      : "bg-green-50 text-green-600"
+                  }`}
+                >
+                  {formatAmount(tx.amount)}đ
+                </span>
               </td>
 
               {/* ACTION */}
-              <td className="px-4 py-3 text-center">
+              <td className="px-3 py-3 text-center">
                 <button
                   onClick={() => handleEdit(tx.id)}
                   className="p-1 text-blue-500 hover:text-blue-700"
