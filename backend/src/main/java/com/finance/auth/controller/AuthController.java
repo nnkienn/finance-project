@@ -125,7 +125,7 @@ public class AuthController {
 
             Cookie cookie = new Cookie("refresh_token", refreshToken);
             cookie.setHttpOnly(true);
-            cookie.setPath("/auth/refresh");
+            cookie.setPath("/");
             res.addCookie(cookie);
 
             return ResponseEntity.ok(

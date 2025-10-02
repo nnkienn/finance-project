@@ -101,6 +101,16 @@ public class UserCategoryService {
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
+    
+    public List<UserCategoryResponse> findByMaster(Long masterId){
+    	User user= SecurityUtils.getCurrentUser();
+    	MasterCategory masterCategory = this.getMasterCategory(masterId) ;
+    	
+    	return userCategoryRepository.findByUserAndMasterCategory(user, masterCategory).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    	
+    }
 
     // 🔹 Copy từ MasterCategory khi user mới đăng ký
     public void copyDefaultCategories() {

@@ -14,6 +14,8 @@ import com.finance.auth.entity.User;
 import com.finance.auth.util.SecurityUtils;
 import com.finance.category.entity.UserCategory;
 import com.finance.category.repository.UserCategoryRepository;
+import com.finance.kafka.dto.TransactionEventDTO;
+import com.finance.kafka.producer.TransactionEventPublisher;
 import com.finance.transaction.dto.TransactionMapper;
 import com.finance.transaction.dto.TransactionRequest;
 import com.finance.transaction.dto.TransactionResponse;
@@ -34,6 +36,8 @@ public class TransactionService implements RecurringPostingPort {
 
     private final TransactionRepository transactionRepository;
     private final UserCategoryRepository userCategoryRepository;
+    private final TransactionEventPublisher transactionEventPublisher;
+
 
     // ================== CRUD ==================
 
@@ -60,8 +64,15 @@ public class TransactionService implements RecurringPostingPort {
         transaction.setUser(user);
         transaction.setUserCategory(userCategory);
 
-        // KHÔNG còn set các field recurring (đã bỏ)
-
+        transactionEventPublisher.publish(new TransactionEventDTO(
+        		transaction.getId(),
+                user.getId(),
+                transaction.getAmount(),
+                transaction.getType().name(),
+                transaction.getPaymentMethod().name(),
+                transaction.getTransactionDate()
+        ));
+        
         return TransactionMapper.toResponse(transactionRepository.save(transaction));
     }
 

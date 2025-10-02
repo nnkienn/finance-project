@@ -56,6 +56,14 @@ public class UserCategoryController {
     public ResponseEntity<List<UserCategoryResponse>> search(@RequestParam String keyword) {
         return ResponseEntity.ok(service.searchByName(keyword));
     }
+    
+    
+    @GetMapping("/by-master/{masterId}")
+    public ResponseEntity<List<UserCategoryResponse>> getByMaster(@PathVariable Long masterId) {
+        return ResponseEntity.ok(service.findByMaster(masterId));
+    }
+
+    
 
     // 🔹 Copy mặc định từ master
     @PostMapping("/import-default")

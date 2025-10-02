@@ -13,6 +13,8 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/homepage") ||
     pathname.startsWith("/category") ||
     pathname.startsWith("/my-categories"); // 👈 thêm nếu có page user categories
+    pathname.startsWith("/transaction"); 
+
 
   // chưa login mà vào protected route
   if (!at && isProtected) {
@@ -38,5 +40,6 @@ export const config = {
     "/homepage/:path*",
     "/category/:path*",
     "/my-categories/:path*", // 👈 optional
+    "/transaction/:path*"
   ],
 };
