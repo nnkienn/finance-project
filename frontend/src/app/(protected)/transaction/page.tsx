@@ -7,6 +7,7 @@ import CardInfo from "@/components/layout/dashboard/CardInfo";
 import RightSidebar from "@/components/layout/transaction/TransactionRightSidebar";
 import TransactionSearchFilter from "@/components/layout/transaction/TransactionSearchFilter";
 import TransactionModal from "@/components/layout/transaction/TransactionModal";
+import ExportMenu from "@/components/layout/transaction/ExportMenu";
 import { Pencil } from "lucide-react";
 
 export default function Homepage() {
@@ -31,14 +32,12 @@ export default function Homepage() {
     },
   ]);
 
-  const [showExportMenu, setShowExportMenu] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
 
   // xuất file
   const handleExport = (type: "csv" | "pdf") => {
     console.log("Exporting as:", type);
-    setShowExportMenu(false);
   };
 
   // lưu transaction (tạo mới hoặc update)
@@ -96,30 +95,7 @@ export default function Homepage() {
                 <h2 className="text-lg font-semibold">Transaction List</h2>
                 <div className="flex items-center gap-3">
                   {/* Export */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowExportMenu(!showExportMenu)}
-                      className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
-                    >
-                      Export ⬇
-                    </button>
-                    {showExportMenu && (
-                      <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-lg z-20">
-                        <button
-                          onClick={() => handleExport("csv")}
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                        >
-                          Export CSV
-                        </button>
-                        <button
-                          onClick={() => handleExport("pdf")}
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                        >
-                          Export PDF
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <ExportMenu onExport={handleExport} />
 
                   {/* Create */}
                   <button

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Listbox } from "@headlessui/react";
 import { Transaction } from "@/type/transaction";
 import { TransactionType } from "@/type/TransactionType";
 
@@ -10,6 +11,9 @@ interface Props {
   onSave: (tx: Transaction) => void;
   initialData?: Transaction | null;
 }
+
+const categories = ["Food", "Work", "Shopping"];
+const payments = ["Cash", "Bank", "Card"];
 
 export default function TransactionModal({ isOpen, onClose, onSave, initialData }: Props) {
   const [form, setForm] = useState<Transaction>({
@@ -54,7 +58,6 @@ export default function TransactionModal({ isOpen, onClose, onSave, initialData 
           {form.id ? "Edit Transaction" : "Add Transaction"}
         </h2>
 
-        {/* Form */}
         <div className="space-y-5">
           {/* Description + Amount */}
           <div>
@@ -80,9 +83,7 @@ export default function TransactionModal({ isOpen, onClose, onSave, initialData 
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">
-              Date
-            </label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
             <input
               type="date"
               value={form.date}
@@ -93,9 +94,7 @@ export default function TransactionModal({ isOpen, onClose, onSave, initialData 
 
           {/* Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">
-              Type
-            </label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Type</label>
             <div className="flex justify-between">
               {(["EXPENSE", "INCOME", "SAVING"] as TransactionType[]).map((t) => (
                 <button
@@ -114,33 +113,51 @@ export default function TransactionModal({ isOpen, onClose, onSave, initialData 
             </div>
           </div>
 
-          {/* Category + Payment */}
+          {/* Category + Payment (Listbox) */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
               Category & Payment Method
             </label>
             <div className="flex gap-3">
-              <select
-                value={form.category}
-                onChange={(e) => handleChange("category", e.target.value)}
-                className="flex-1 px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none text-sm"
-              >
-                <option value="">Select Category</option>
-                <option value="Food">Food</option>
-                <option value="Work">Work</option>
-                <option value="Shopping">Shopping</option>
-              </select>
+              {/* Category */}
+              <Listbox value={form.category} onChange={(val) => handleChange("category", val)}>
+                <div className="relative w-full">
+                  <Listbox.Button className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-left text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400">
+                    {form.category || "Select Category"}
+                  </Listbox.Button>
+                  <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/10 focus:outline-none z-50">
+                    {categories.map((cat, i) => (
+                      <Listbox.Option
+                        key={i}
+                        value={cat}
+                        className="cursor-pointer select-none py-2 px-4 hover:bg-pink-50"
+                      >
+                        {cat}
+                      </Listbox.Option>
+                    ))}
+                  </Listbox.Options>
+                </div>
+              </Listbox>
 
-              <select
-                value={form.paymentMethod}
-                onChange={(e) => handleChange("paymentMethod", e.target.value)}
-                className="flex-1 px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none text-sm"
-              >
-                <option value="">Payment Method</option>
-                <option value="Cash">Cash</option>
-                <option value="Bank">Bank</option>
-                <option value="Card">Card</option>
-              </select>
+              {/* Payment */}
+              <Listbox value={form.paymentMethod} onChange={(val) => handleChange("paymentMethod", val)}>
+                <div className="relative w-full">
+                  <Listbox.Button className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-left text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400">
+                    {form.paymentMethod || "Payment Method"}
+                  </Listbox.Button>
+                  <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/10 focus:outline-none z-50">
+                    {payments.map((pay, i) => (
+                      <Listbox.Option
+                        key={i}
+                        value={pay}
+                        className="cursor-pointer select-none py-2 px-4 hover:bg-pink-50"
+                      >
+                        {pay}
+                      </Listbox.Option>
+                    ))}
+                  </Listbox.Options>
+                </div>
+              </Listbox>
             </div>
           </div>
         </div>
