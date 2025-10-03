@@ -19,6 +19,7 @@ import {
 } from "@/store/slice/transactionSlice";
 import { fetchUserCategories } from "@/store/slice/userCategorySlice";
 import { Transaction } from "@/type/transaction";
+import { transactionExportService } from "@/service/transactionExportService";
 
 export default function Homepage() {
   const dispatch = useAppDispatch();
@@ -55,9 +56,27 @@ export default function Homepage() {
     );
   }, [dispatch, size]);
 
-  const handleExport = (type: "csv" | "pdf") => {
-    console.log("Exporting as:", type);
-  };
+
+const handleExport = async (type: "csv" | "pdf") => {
+  try {
+    const blob =
+      type === "csv"
+        ? await transactionExportService.exportCsv()
+        : await transactionExportService.exportPdf();
+
+    // Tạo link tải file
+    const url = window.URL.createObjectURL(new Blob([blob]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `transactions.${type}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (err) {
+    console.error("Export failed", err);
+    alert("❌ Export failed. Check console for details.");
+  }
+};
 
   const handleSave = async (payload: Omit<Transaction, "id">) => {
     try {
