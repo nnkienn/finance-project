@@ -15,10 +15,13 @@ import {
   importDefaultUserCategory,
 } from "@/store/slice/userCategorySlice";
 import { UserCategory } from "@/type/UserCategory";
+import { Transaction } from "@/type/transaction";
+
 import UserCategoryHeader from "@/components/layout/userCategory/UserCategoryHeader";
 import UserCategorySearch from "@/components/layout/userCategory/UserCategorySearch";
 import UserCategoryGrid from "@/components/layout/userCategory/UserCategoryGrid";
 import UserCategoryModal from "@/components/layout/userCategory/UserCategoryModal";
+import CategoryTransactionModal from "@/components/layout/userCategory/CategoryTransactionModal"; // 👈 modal add transaction từ category
 
 export default function UserCategoryPage() {
   const { masterId } = useParams();
@@ -34,6 +37,10 @@ export default function UserCategoryPage() {
   const [formName, setFormName] = useState("");
   const [formIcon, setFormIcon] = useState("");
 
+  // 👇 state cho transaction modal
+  const [selectedCategory, setSelectedCategory] = useState<UserCategory | null>(null);
+  const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+
   // Load categories by masterId
   useEffect(() => {
     if (masterId) {
@@ -45,7 +52,7 @@ export default function UserCategoryPage() {
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Open Modal
+  // Open Category modal
   const handleOpenModal = (cate?: UserCategory) => {
     if (cate) {
       setEditing(cate);
@@ -59,7 +66,7 @@ export default function UserCategoryPage() {
     setIsModalOpen(true);
   };
 
-  // Submit
+  // Submit Category form
   const handleSubmit = async () => {
     if (!formName.trim()) return alert("Name is required");
     if (editing) {
@@ -81,7 +88,7 @@ export default function UserCategoryPage() {
     setIsModalOpen(false);
   };
 
-  // Delete
+  // Delete Category
   const handleDelete = async (id: number) => {
     if (confirm("Delete this category?")) {
       await dispatch(removeUserCategory(id)).unwrap();
@@ -91,6 +98,18 @@ export default function UserCategoryPage() {
   // Import default
   const handleImportDefault = async () => {
     await dispatch(importDefaultUserCategory()).unwrap();
+  };
+
+  // 👇 Add transaction từ category
+  const handleAddTransaction = (cat: UserCategory) => {
+    setSelectedCategory(cat);
+    setIsTxModalOpen(true);
+  };
+
+  // 👇 Lưu transaction mock (sau này connect Redux)
+  const handleCreateTransaction = (tx: Transaction) => {
+    console.log("New Transaction created:", tx);
+    // TODO: dispatch(addTransaction(tx))
   };
 
   return (
@@ -131,6 +150,7 @@ export default function UserCategoryPage() {
                 categories={filteredCategories}
                 onEdit={handleOpenModal}
                 onDelete={handleDelete}
+                onAddTransaction={handleAddTransaction} // 👈 thêm props mới
               />
             </div>
           </div>
@@ -142,6 +162,7 @@ export default function UserCategoryPage() {
         </div>
       </main>
 
+      {/* Category Modal */}
       <UserCategoryModal
         open={isModalOpen}
         editing={editing}
@@ -151,6 +172,14 @@ export default function UserCategoryPage() {
         setFormIcon={setFormIcon}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmit}
+      />
+
+      {/* Transaction Modal */}
+      <CategoryTransactionModal
+        open={isTxModalOpen}
+        category={selectedCategory}
+        onClose={() => setIsTxModalOpen(false)}
+        onCreate={handleCreateTransaction}
       />
     </div>
   );

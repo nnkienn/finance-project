@@ -6,9 +6,10 @@ interface Props {
   categories: UserCategory[];
   onEdit: (c: UserCategory) => void;
   onDelete: (id: number) => void;
+  onAddTransaction: (c: UserCategory) => void; 
 }
 
-export default function UserCategoryGrid({ categories, onEdit, onDelete }: Props) {
+export default function UserCategoryGrid({ categories, onEdit, onDelete, onAddTransaction }: Props) {
   if (!categories.length) {
     return <p className="text-gray-500">No categories found.</p>;
   }
@@ -29,7 +30,7 @@ export default function UserCategoryGrid({ categories, onEdit, onDelete }: Props
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex flex-col gap-2 mt-4">
             <button
               onClick={() => onEdit(cat)}
               className="px-3 py-1.5 text-sm rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
@@ -41,6 +42,12 @@ export default function UserCategoryGrid({ categories, onEdit, onDelete }: Props
               className="px-3 py-1.5 text-sm rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
             >
               Delete
+            </button>
+            <button
+              onClick={() => onAddTransaction(cat)} // 👈 gọi callback
+              className="px-3 py-1.5 text-sm rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition"
+            >
+               Transaction
             </button>
           </div>
         </div>

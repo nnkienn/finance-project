@@ -1,9 +1,9 @@
 export interface Transaction {
-  id?: number; // để optional khi tạo mới
-  description: string;
+  id?: number; 
+  note: string; 
   amount: number;
-  date: string;
+  transactionDate: string; // 
   type: "EXPENSE" | "INCOME" | "SAVING";
-  category: string;
-  paymentMethod: string;
+  paymentMethod: "CASH" | "BANK" | "CARD";
+  userCategoryId: number; 
 }

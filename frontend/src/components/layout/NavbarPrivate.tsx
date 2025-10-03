@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation"; // 👈 hook để lấy URL hiện tại
 import {
   Search,
   LayoutGrid,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import SettingsMenu from "./dashboard/SettingsMenu";
 import NotificationsMenu from "./dashboard/NotificationsMenu";
+import { useState } from "react";
 
 interface TabItem {
   id: string;
@@ -21,41 +22,66 @@ interface TabItem {
 }
 
 export default function NavbarPrivate() {
-  const [active, setActive] = useState("overview");
+  const pathname = usePathname(); // 👈 URL hiện tại
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<"settings" | "notifications" | null>(
     null
   );
 
   const tabs: TabItem[] = [
-    { id: "overview", label: "Overview", icon: <LayoutGrid size={16} />, link: "/homepage" },
-    { id: "transaction", label: "Transaction", icon: <Shuffle size={16} />, link: "/transaction" },
-    { id: "category", label: "Category", icon: <FileText size={16} />, link: "/category" },
-    { id: "activity", label: "Activity", icon: <Activity size={16} />, link: "/activity" },
+    {
+      id: "overview",
+      label: "Overview",
+      icon: <LayoutGrid size={16} />,
+      link: "/homepage",
+    },
+    {
+      id: "transaction",
+      label: "Transaction",
+      icon: <Shuffle size={16} />,
+      link: "/transaction",
+    },
+    {
+      id: "category",
+      label: "Category",
+      icon: <FileText size={16} />,
+      link: "/category",
+    },
+    {
+      id: "activity",
+      label: "Activity",
+      icon: <Activity size={16} />,
+      link: "/activity",
+    },
   ];
 
-  const renderTabButton = (tab: TabItem, mobile = false) => (
-    <Link
-      key={tab.id}
-      href={tab.link}
-      onClick={() => {
-        setActive(tab.id);
-        if (mobile) setMobileOpen(false);
-      }}
-      className={`flex items-center gap-2 px-3 ${
-        mobile ? "py-2" : "py-1.5"
-      } rounded-lg font-medium text-sm transition ${
-        active === tab.id
-          ? "bg-purple-100 text-pink-600"
-          : mobile
-          ? "text-gray-500 hover:text-gray-700"
-          : "text-gray-400 hover:text-gray-700"
-      }`}
-    >
-      {tab.icon}
-      {tab.label}
-    </Link>
-  );
+  const renderTabButton = (tab: TabItem, mobile = false) => {
+    // ✅ active khi pathname trùng hoặc bắt đầu bằng tab.link
+    const isActive =
+      pathname === tab.link || pathname.startsWith(tab.link + "/");
+
+    return (
+      <Link
+        key={tab.id}
+        href={tab.link}
+        onClick={() => {
+          if (mobile) setMobileOpen(false);
+        }}
+        className={`flex items-center gap-2 px-3 ${
+          mobile ? "py-2" : "py-1.5"
+        } rounded-lg font-medium text-sm transition ${
+          isActive
+            ? "bg-purple-100 text-pink-600"
+            : mobile
+            ? "text-gray-500 hover:text-gray-700"
+            : "text-gray-400 hover:text-gray-700"
+        }`}
+      >
+        {tab.icon}
+        {tab.label}
+      </Link>
+    );
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white shadow-sm">

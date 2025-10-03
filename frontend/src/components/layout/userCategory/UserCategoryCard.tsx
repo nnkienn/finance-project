@@ -6,9 +6,10 @@ interface Props {
   category: UserCategory;
   onEdit: (c: UserCategory) => void;
   onDelete: (id: number) => void;
+  onAddTransaction: (c: UserCategory) => void; // 👈 thêm props mới
 }
 
-export default function UserCategoryCard({ category, onEdit, onDelete }: Props) {
+export default function UserCategoryCard({ category, onEdit, onDelete, onAddTransaction }: Props) {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
       {/* Icon + Name */}
@@ -32,6 +33,12 @@ export default function UserCategoryCard({ category, onEdit, onDelete }: Props) 
           className="flex-1 px-3 py-1.5 text-sm rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
         >
           Delete
+        </button>
+        <button
+          onClick={() => onAddTransaction(category)} // 👈 gọi callback
+          className="flex-1 px-3 py-1.5 text-sm rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition"
+        >
+           Transaction
         </button>
       </div>
     </div>

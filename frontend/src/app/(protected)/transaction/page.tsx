@@ -1,59 +1,76 @@
 "use client";
 
 import { useState } from "react";
-import { Transaction } from "@/type/transaction";
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
 import RightSidebar from "@/components/layout/transaction/TransactionRightSidebar";
 import TransactionSearchFilter from "@/components/layout/transaction/TransactionSearchFilter";
-import TransactionModal from "@/components/layout/transaction/TransactionModal";
 import ExportMenu from "@/components/layout/transaction/ExportMenu";
+import TransactionModal from "@/components/layout/transaction/TransactionModal";
 import { Pencil } from "lucide-react";
+import { UserCategory } from "@/type/UserCategory";
+
+// Transaction hiển thị cho bảng
+interface TransactionView {
+  id: number;
+  note: string;
+  amount: number;
+  transactionDate: string;
+  type: "EXPENSE" | "INCOME" | "SAVING";
+  paymentMethod: string;
+  userCategoryId: number;
+}
 
 export default function Homepage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([
+  const [transactions, setTransactions] = useState<TransactionView[]>([
     {
       id: 1,
-      description: "Lương tháng 9",
+      note: "Lương tháng 9",
       amount: 8000000,
-      date: "2025-09-10",
+      transactionDate: "2025-09-10T09:00:00",
       type: "EXPENSE",
-      category: "Salary",
-      paymentMethod: "Bank",
+      paymentMethod: "BANK",
+      userCategoryId: 1,
     },
     {
       id: 2,
-      description: "Freelance project",
+      note: "Freelance project",
       amount: 2500000,
-      date: "2025-09-12",
+      transactionDate: "2025-09-12T09:00:00",
       type: "INCOME",
-      category: "Work",
-      paymentMethod: "Cash",
+      paymentMethod: "CASH",
+      userCategoryId: 2,
     },
   ]);
 
   const [showModal, setShowModal] = useState(false);
-  const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [editTx, setEditTx] = useState<TransactionView | null>(null);
 
-  // xuất file
+  // Export
   const handleExport = (type: "csv" | "pdf") => {
     console.log("Exporting as:", type);
   };
 
-  // lưu transaction (tạo mới hoặc update)
-  const handleSave = (tx: Transaction) => {
-    if (tx.id) {
-      // update
+  // Save transaction (create or update)
+  const handleSave = (payload: any) => {
+    console.log("API Payload:", payload);
+
+    if (editTx) {
+      // Update local list
       setTransactions((prev) =>
-        prev.map((t) => (t.id === tx.id ? { ...tx } : t))
+        prev.map((t) =>
+          t.id === editTx.id ? { ...payload, id: editTx.id } : t
+        )
       );
     } else {
-      // create
+      // Create new
       setTransactions((prev) => [
         ...prev,
-        { ...tx, id: prev.length ? prev[prev.length - 1].id! + 1 : 1 },
+        { ...payload, id: prev.length ? prev[prev.length - 1].id! + 1 : 1 },
       ]);
     }
+
+    setShowModal(false);
   };
 
   return (
@@ -94,10 +111,8 @@ export default function Homepage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Transaction List</h2>
                 <div className="flex items-center gap-3">
-                  {/* Export */}
                   <ExportMenu onExport={handleExport} />
 
-                  {/* Create */}
                   <button
                     onClick={() => {
                       setEditTx(null);
@@ -130,9 +145,9 @@ export default function Homepage() {
                         className="border-b last:border-0 hover:bg-gray-50 transition"
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
-                          {new Date(tx.date).toLocaleDateString("vi-VN")}
+                          {new Date(tx.transactionDate).toLocaleDateString("vi-VN")}
                         </td>
-                        <td className="px-4 py-3 truncate">{tx.description}</td>
+                        <td className="px-4 py-3 truncate">{tx.note}</td>
                         <td className="px-4 py-3">
                           <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
                             {tx.paymentMethod}
@@ -186,7 +201,7 @@ export default function Homepage() {
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Modal (trả về payload chuẩn API) */}
       <TransactionModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
