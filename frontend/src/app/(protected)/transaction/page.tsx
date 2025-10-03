@@ -12,29 +12,48 @@ import TransactionTable from "@/components/layout/transaction/TransactionTable";
 import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";
 import {
-  fetchTransactions,
   createTransaction,
   updateTransaction,
   deleteTransaction,
-  filterTransactions, // 👈 thêm filter
+  fetchTransactionsPaged,
 } from "@/store/slice/transactionSlice";
 import { fetchUserCategories } from "@/store/slice/userCategorySlice";
 import { Transaction } from "@/type/transaction";
 
 export default function Homepage() {
   const dispatch = useAppDispatch();
-  const { items: transactions, loading, error } = useAppSelector(
-    (state) => state.transactions
-  );
+  const { items: transactions, loading, error, page, totalPages, size } =
+    useAppSelector((state) => state.transactions);
   const { items: categories } = useAppSelector((state) => state.userCategories);
 
   const [showModal, setShowModal] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
 
+  // filter state để nhớ khi đổi trang
+  const [filters, setFilters] = useState<{
+    startDate: string | null;
+    endDate: string | null;
+    type: string | null;
+    categoryId: number | null;
+  }>({
+    startDate: null,
+    endDate: null,
+    type: null,
+    categoryId: null,
+  });
+
   useEffect(() => {
-    dispatch(fetchTransactions());
-    dispatch(fetchUserCategories()); // load category cho dropdown
-  }, [dispatch]);
+    dispatch(fetchUserCategories());
+
+    // load lần đầu trang 0
+    dispatch(
+      fetchTransactionsPaged({
+        page: 0,
+        size,
+        sort: "transactionDate,desc",
+      })
+    );
+  }, [dispatch, size]);
 
   const handleExport = (type: "csv" | "pdf") => {
     console.log("Exporting as:", type);
@@ -70,17 +89,38 @@ export default function Homepage() {
     }
   };
 
-  // ✅ xử lý filter từ component
-  const handleFilter = (filters: {
+  // ✅ filter handler (convert null → undefined)
+  const handleFilter = (f: {
     startDate: string | null;
     endDate: string | null;
-    category: string | null;
+    type: string | null;
+    categoryId: number | null;
   }) => {
+    setFilters(f);
     dispatch(
-      filterTransactions({
+      fetchTransactionsPaged({
+        startDate: f.startDate || undefined,
+        endDate: f.endDate || undefined,
+        type: f.type as "EXPENSE" | "INCOME" | "SAVING" | undefined,
+        categoryId: f.categoryId || undefined,
+        page: 0,
+        size,
+        sort: "transactionDate,desc",
+      })
+    );
+  };
+
+  // ✅ đổi trang (giữ filter cũ)
+  const handlePageChange = (newPage: number) => {
+    dispatch(
+      fetchTransactionsPaged({
         startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
-        type: filters.category as "EXPENSE" | "INCOME" | "SAVING" | undefined,
+        type: filters.type as "EXPENSE" | "INCOME" | "SAVING" | undefined,
+        categoryId: filters.categoryId || undefined,
+        page: newPage,
+        size,
+        sort: "transactionDate,desc",
       })
     );
   };
@@ -112,7 +152,10 @@ export default function Homepage() {
             {/* Filter */}
             <div className="bg-white rounded-2xl shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Search & Filter</h2>
-              <TransactionSearchFilter onApply={handleFilter} />
+              <TransactionSearchFilter
+                categories={categories}
+                onApply={handleFilter}
+              />
             </div>
 
             {/* Transaction Section */}
@@ -144,6 +187,27 @@ export default function Homepage() {
                 }}
                 onDelete={handleDelete}
               />
+
+              {/* Pagination */}
+              <div className="flex justify-center items-center gap-2 mt-4">
+                <button
+                  disabled={page <= 0}
+                  onClick={() => handlePageChange(page - 1)}
+                  className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                >
+                  Prev
+                </button>
+                <span className="text-sm text-gray-600">
+                  Page {page + 1} of {totalPages}
+                </span>
+                <button
+                  disabled={page >= totalPages - 1}
+                  onClick={() => handlePageChange(page + 1)}
+                  className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
 

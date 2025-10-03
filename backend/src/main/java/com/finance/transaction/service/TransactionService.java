@@ -221,7 +221,7 @@ public class TransactionService implements RecurringPostingPort {
 		    tx.setUser(user);
 		    tx.setUserCategory(category);
 		    tx.setAmount(amount);
-		    tx.setType(type != null ? type : TransactionType.EXPENSE); // mặc định chi
+		    tx.setType(type != null ? type : TransactionType.EXPENSE);
 		    tx.setPaymentMethod(method != null ? method : PaymentMethod.BANK);
 		    tx.setNote(note);
 		    tx.setTransactionDate(when);

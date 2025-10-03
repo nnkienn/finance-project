@@ -5,6 +5,9 @@ import { Transaction } from "@/type/transaction";
 
 const API_URL = "/api/transactions";
 
+// =====================
+// Types
+// =====================
 export interface TransactionPayload {
   amount: number;
   type: TransactionType; // "EXPENSE" | "INCOME" | "SAVING"
@@ -14,26 +17,38 @@ export interface TransactionPayload {
   userCategoryId: number;
 }
 
+// Response của Spring Data Page
+export interface PagedResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  number: number; // page hiện tại
+  size: number;   // số record/trang
+}
+
+// =====================
+// Service
+// =====================
 export const transactionService = {
-  // Create transaction
+  // Create
   async createTransaction(payload: TransactionPayload): Promise<Transaction> {
     const res = await api.post(API_URL, payload);
     return res.data;
   },
 
-  // Get all transactions của user
+  // Get all
   async getUserTransactions(): Promise<Transaction[]> {
     const res = await api.get(API_URL);
     return res.data;
   },
 
-  // Get 1 transaction by id
+  // Get by id
   async getTransactionById(id: number): Promise<Transaction> {
     const res = await api.get(`${API_URL}/${id}`);
     return res.data;
   },
 
-  // Update transaction
+  // Update
   async updateTransaction(
     id: number,
     payload: Partial<TransactionPayload>
@@ -42,20 +57,18 @@ export const transactionService = {
     return res.data;
   },
 
-  // Delete transaction
+  // Delete
   async deleteTransaction(id: number): Promise<void> {
     await api.delete(`${API_URL}/${id}`);
   },
 
-  // Get latest transactions (limit)
+  // Get latest
   async getLatestTransactions(limit: number = 5): Promise<Transaction[]> {
-    const res = await api.get(`${API_URL}/latest`, {
-      params: { limit },
-    });
+    const res = await api.get(`${API_URL}/latest`, { params: { limit } });
     return res.data;
   },
 
-  // Filter transactions (non-paged)
+  // Filter (non-paged)
   async getTransactionsFiltered(params: {
     startDate?: string;
     endDate?: string;
@@ -67,8 +80,8 @@ export const transactionService = {
     return res.data;
   },
 
-  // Filter transactions with pagination
-  async getTransactionsFilteredPaged(params: {
+  // Filter + Pagination
+  async getTransactionsPaged(params: {
     startDate?: string;
     endDate?: string;
     type?: TransactionType;
@@ -76,7 +89,8 @@ export const transactionService = {
     paymentMethod?: string;
     page?: number;
     size?: number;
-  }): Promise<{ content: Transaction[]; totalElements: number }> {
+    sort?: string; // ví dụ: "transactionDate,desc"
+  }): Promise<PagedResponse<Transaction>> {
     const res = await api.get(`${API_URL}/filter-paged`, { params });
     return res.data;
   },

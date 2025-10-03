@@ -111,33 +111,38 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Email verified. You can now log in."));
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req, HttpServletResponse res) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(req.getEmail().toLowerCase(), req.getPassword()));
+   @PostMapping("/login")
+public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req, HttpServletResponse res) {
+    try {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(req.getEmail().toLowerCase(), req.getPassword()));
 
-            var user = userRepository.findByEmail(req.getEmail().toLowerCase()).orElseThrow();
-            var roles = user.getRoles().stream().map(Role::getName).toList();
+        var user = userRepository.findByEmail(req.getEmail().toLowerCase()).orElseThrow();
+        var roles = user.getRoles().stream().map(Role::getName).toList();
 
-            String accessToken = jwtService.generateAccessToken(user.getEmail(), roles);
-            String refreshToken = jwtService.generateRefreshToken(user.getEmail(), roles);
+        String accessToken = jwtService.generateAccessToken(user.getEmail(), roles);
+        String refreshToken = jwtService.generateRefreshToken(user.getEmail(), roles);
 
-            Cookie cookie = new Cookie("refresh_token", refreshToken);
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            res.addCookie(cookie);
+        Cookie cookie = new Cookie("refresh_token", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // bắt buộc nếu chạy HTTPS
+        cookie.setPath("/");
+        cookie.setMaxAge(7 * 24 * 60 * 60); // 7 ngày
+        cookie.setAttribute("SameSite", "None"); // Java 11+, hoặc dùng res.addHeader
 
-            return ResponseEntity.ok(
-                    new AuthResponse("Bearer", accessToken, jwtService.getAccessTokenValiditySeconds()));
-        } catch (BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid email or password"));
-        } catch (DisabledException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Account disabled or not verified"));
-        }
+        res.addCookie(cookie);
+
+        return ResponseEntity.ok(
+                new AuthResponse("Bearer", accessToken, jwtService.getAccessTokenValiditySeconds()));
+    } catch (BadCredentialsException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "Invalid email or password"));
+    } catch (DisabledException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "Account disabled or not verified"));
     }
+}
+
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(
