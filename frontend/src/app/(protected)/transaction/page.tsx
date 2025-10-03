@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
 import RightSidebar from "@/components/layout/transaction/TransactionRightSidebar";
@@ -8,43 +8,30 @@ import TransactionSearchFilter from "@/components/layout/transaction/Transaction
 import ExportMenu from "@/components/layout/transaction/ExportMenu";
 import TransactionModal from "@/components/layout/transaction/TransactionModal";
 import { Pencil } from "lucide-react";
-import { UserCategory } from "@/type/UserCategory";
 
-// Transaction hiển thị cho bảng
-interface TransactionView {
-  id: number;
-  note: string;
-  amount: number;
-  transactionDate: string;
-  type: "EXPENSE" | "INCOME" | "SAVING";
-  paymentMethod: string;
-  userCategoryId: number;
-}
+import { useAppDispatch } from "@/hook/useAppDispatch";
+import { useAppSelector } from "@/hook/useAppSelector";
+import {
+  fetchTransactions,
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
+} from "@/store/slice/transactionSlice";
+import { Transaction } from "@/type/transaction";
 
 export default function Homepage() {
-  const [transactions, setTransactions] = useState<TransactionView[]>([
-    {
-      id: 1,
-      note: "Lương tháng 9",
-      amount: 8000000,
-      transactionDate: "2025-09-10T09:00:00",
-      type: "EXPENSE",
-      paymentMethod: "BANK",
-      userCategoryId: 1,
-    },
-    {
-      id: 2,
-      note: "Freelance project",
-      amount: 2500000,
-      transactionDate: "2025-09-12T09:00:00",
-      type: "INCOME",
-      paymentMethod: "CASH",
-      userCategoryId: 2,
-    },
-  ]);
+  const dispatch = useAppDispatch();
+  const { items: transactions, loading, error } = useAppSelector(
+    (state) => state.transactions
+  );
 
   const [showModal, setShowModal] = useState(false);
-  const [editTx, setEditTx] = useState<TransactionView | null>(null);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
+
+  // Load transactions khi page mở
+  useEffect(() => {
+    dispatch(fetchTransactions());
+  }, [dispatch]);
 
   // Export
   const handleExport = (type: "csv" | "pdf") => {
@@ -52,25 +39,26 @@ export default function Homepage() {
   };
 
   // Save transaction (create or update)
-  const handleSave = (payload: any) => {
-    console.log("API Payload:", payload);
-
-    if (editTx) {
-      // Update local list
-      setTransactions((prev) =>
-        prev.map((t) =>
-          t.id === editTx.id ? { ...payload, id: editTx.id } : t
-        )
-      );
-    } else {
-      // Create new
-      setTransactions((prev) => [
-        ...prev,
-        { ...payload, id: prev.length ? prev[prev.length - 1].id! + 1 : 1 },
-      ]);
+  const handleSave = async (payload: Omit<Transaction, "id">) => {
+    try {
+      if (editTx) {
+        await dispatch(
+          updateTransaction({ id: editTx.id!, data: payload })
+        ).unwrap();
+      } else {
+        await dispatch(createTransaction(payload)).unwrap();
+      }
+      setShowModal(false);
+    } catch (err) {
+      console.error("Save transaction failed:", err);
     }
+  };
 
-    setShowModal(false);
+  // Delete transaction
+  const handleDelete = async (id: number) => {
+    if (confirm("Delete this transaction?")) {
+      await dispatch(deleteTransaction(id)).unwrap();
+    }
   };
 
   return (
@@ -102,6 +90,7 @@ export default function Homepage() {
               <TransactionSearchFilter
                 onApply={(filters) => {
                   console.log("Filters applied:", filters);
+                  // sau này sẽ dispatch fetchTransactionsFiltered
                 }}
               />
             </div>
@@ -124,6 +113,9 @@ export default function Homepage() {
                   </button>
                 </div>
               </div>
+
+              {loading && <p className="text-gray-500">Loading...</p>}
+              {error && <p className="text-red-500">{error}</p>}
 
               {/* Table */}
               <div className="overflow-x-auto">
@@ -175,7 +167,7 @@ export default function Homepage() {
                         >
                           {tx.amount.toLocaleString("vi-VN")}đ
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center flex gap-2 justify-center">
                           <button
                             onClick={() => {
                               setEditTx(tx);
@@ -184,6 +176,12 @@ export default function Homepage() {
                             className="text-blue-500 hover:text-blue-700"
                           >
                             <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(tx.id!)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            X
                           </button>
                         </td>
                       </tr>
@@ -201,7 +199,7 @@ export default function Homepage() {
         </div>
       </main>
 
-      {/* Modal (trả về payload chuẩn API) */}
+      {/* Modal (dispatch create/update) */}
       <TransactionModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
