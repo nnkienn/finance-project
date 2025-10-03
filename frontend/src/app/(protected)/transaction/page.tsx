@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
+import ExportMenu from "@/components/layout/transaction/ExportMenu";
 import RightSidebar from "@/components/layout/transaction/TransactionRightSidebar";
 import TransactionSearchFilter from "@/components/layout/transaction/TransactionSearchFilter";
-import ExportMenu from "@/components/layout/transaction/ExportMenu";
-import TransactionModal from "@/components/layout/transaction/TransactionModal";
-import { Pencil } from "lucide-react";
+import TransactionModal from "@/components/layout/transaction/AddTransactionModal";
+import TransactionTable from "@/components/layout/transaction/TransactionTable";
 
 import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";
@@ -17,6 +17,7 @@ import {
   updateTransaction,
   deleteTransaction,
 } from "@/store/slice/transactionSlice";
+import { fetchUserCategories } from "@/store/slice/userCategorySlice";
 import { Transaction } from "@/type/transaction";
 
 export default function Homepage() {
@@ -24,50 +25,58 @@ export default function Homepage() {
   const { items: transactions, loading, error } = useAppSelector(
     (state) => state.transactions
   );
+  const { items: categories } = useAppSelector((state) => state.userCategories);
 
   const [showModal, setShowModal] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
 
-  // Load transactions khi page mở
   useEffect(() => {
     dispatch(fetchTransactions());
+    dispatch(fetchUserCategories()); // load category cho dropdown
   }, [dispatch]);
 
-  // Export
   const handleExport = (type: "csv" | "pdf") => {
     console.log("Exporting as:", type);
   };
 
-  // Save transaction (create or update)
   const handleSave = async (payload: Omit<Transaction, "id">) => {
     try {
       if (editTx) {
         await dispatch(
           updateTransaction({ id: editTx.id!, data: payload })
         ).unwrap();
+        alert("✅ Transaction updated successfully!");
       } else {
         await dispatch(createTransaction(payload)).unwrap();
+        alert("✅ Transaction created successfully!");
       }
       setShowModal(false);
     } catch (err) {
       console.error("Save transaction failed:", err);
+      alert("❌ Failed to save transaction. Check console for details.");
     }
   };
 
-  // Delete transaction
   const handleDelete = async (id: number) => {
     if (confirm("Delete this transaction?")) {
-      await dispatch(deleteTransaction(id)).unwrap();
+      try {
+        await dispatch(deleteTransaction(id)).unwrap();
+        alert("🗑️ Transaction deleted successfully!");
+      } catch (err) {
+        console.error("Delete transaction failed:", err);
+        alert("❌ Failed to delete transaction. Check console for details.");
+      }
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <NavbarPrivate />
+
       <main className="pt-24 px-4 md:px-8 lg:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* LEFT */}
-          <div className="md:col-span-3">
+        <div className="grid grid-cols-12 gap-6">
+          {/* LEFT: My Card */}
+          <div className="col-span-12 md:col-span-3">
             <h2 className="text-lg font-semibold mb-4">My Card</h2>
             <CardInfo
               name="Knance"
@@ -83,25 +92,50 @@ export default function Homepage() {
           </div>
 
           {/* CENTER */}
-          <div className="md:col-span-6 space-y-6">
-            {/* Filter box */}
-            <div className="bg-white rounded-2xl shadow p-6">
-              <h2 className="text-lg font-semibold mb-6">Transaction</h2>
-              <TransactionSearchFilter
-                onApply={(filters) => {
-                  console.log("Filters applied:", filters);
-                  // sau này sẽ dispatch fetchTransactionsFiltered
-                }}
-              />
+          <div className="col-span-12 md:col-span-6 space-y-6">
+            {/* Summary cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full">
+              {/* Balance */}
+              <div className="bg-white rounded-xl shadow p-4 border-l-4 border-blue-500 h-full flex flex-col justify-center">
+                <p className="text-sm text-gray-500">My Balance</p>
+                <p className="text-xl font-bold">$128,320</p>
+              </div>
+
+              {/* Income */}
+              <div className="bg-white rounded-xl shadow p-4 border-l-4 border-green-500 h-full flex flex-col justify-center">
+                <p className="text-sm text-gray-500">Income</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-bold">$10,500</p>
+                  <span className="text-green-600 bg-green-100 text-xs font-medium px-2 py-0.5 rounded">
+                    ↑ 11.09%
+                  </span>
+                </div>
+              </div>
+
+              {/* Savings */}
+              <div className="bg-white rounded-xl shadow p-4 border-l-4 border-yellow-500 h-full flex flex-col justify-center">
+                <p className="text-sm text-gray-500">Savings</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-bold">$5,250</p>
+                  <span className="text-green-600 bg-green-100 text-xs font-medium px-2 py-0.5 rounded">
+                    ↑ 11.09%
+                  </span>
+                </div>
+              </div>
+
+              {/* Expenses */}
+              <div className="bg-white rounded-xl shadow p-4 border-l-4 border-orange-500 h-full flex flex-col justify-center">
+                <p className="text-sm text-gray-500">Expenses</p>
+                <p className="text-xl font-bold">$3,200</p>
+              </div>
             </div>
 
-            {/* Transaction List */}
+            {/* Transaction Section */}
             <div className="bg-white rounded-2xl shadow p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Transaction List</h2>
                 <div className="flex items-center gap-3">
                   <ExportMenu onExport={handleExport} />
-
                   <button
                     onClick={() => {
                       setEditTx(null);
@@ -117,94 +151,31 @@ export default function Homepage() {
               {loading && <p className="text-gray-500">Loading...</p>}
               {error && <p className="text-red-500">{error}</p>}
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full table-fixed text-sm text-left text-gray-600">
-                  <thead className="text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-3">Date</th>
-                      <th className="px-4 py-3">Note</th>
-                      <th className="px-4 py-3">Payment</th>
-                      <th className="px-4 py-3">Type</th>
-                      <th className="px-4 py-3 text-right">Amount</th>
-                      <th className="px-4 py-3 text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.map((tx) => (
-                      <tr
-                        key={tx.id}
-                        className="border-b last:border-0 hover:bg-gray-50 transition"
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {new Date(tx.transactionDate).toLocaleDateString("vi-VN")}
-                        </td>
-                        <td className="px-4 py-3 truncate">{tx.note}</td>
-                        <td className="px-4 py-3">
-                          <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
-                            {tx.paymentMethod}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-1 rounded-md text-xs font-medium ${
-                              tx.type === "EXPENSE"
-                                ? "bg-red-100 text-red-600"
-                                : tx.type === "INCOME"
-                                ? "bg-green-100 text-green-600"
-                                : "bg-yellow-100 text-yellow-600"
-                            }`}
-                          >
-                            {tx.type}
-                          </span>
-                        </td>
-                        <td
-                          className={`px-4 py-3 text-right font-semibold ${
-                            tx.type === "EXPENSE"
-                              ? "text-red-500"
-                              : "text-green-600"
-                          }`}
-                        >
-                          {tx.amount.toLocaleString("vi-VN")}đ
-                        </td>
-                        <td className="px-4 py-3 text-center flex gap-2 justify-center">
-                          <button
-                            onClick={() => {
-                              setEditTx(tx);
-                              setShowModal(true);
-                            }}
-                            className="text-blue-500 hover:text-blue-700"
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(tx.id!)}
-                            className="text-red-500 hover:text-red-700 text-sm"
-                          >
-                            X
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <TransactionTable
+                transactions={transactions}
+                onEdit={(tx) => {
+                  setEditTx(tx);
+                  setShowModal(true);
+                }}
+                onDelete={handleDelete}
+              />
             </div>
           </div>
 
           {/* RIGHT */}
-          <div className="md:col-span-3">
+          <div className="col-span-12 md:col-span-3">
             <RightSidebar />
           </div>
         </div>
       </main>
 
-      {/* Modal (dispatch create/update) */}
+      {/* Modal */}
       <TransactionModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSave={handleSave}
         initialData={editTx}
+        categories={categories}
       />
     </div>
   );

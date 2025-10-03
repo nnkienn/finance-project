@@ -1,48 +1,34 @@
 "use client";
 
-import { Pencil } from "lucide-react"; // 👈 icon bút chì
+import { Pencil } from "lucide-react";
+import { Transaction } from "@/type/transaction";
 
-interface Transaction {
-  id: number;
-  amount: number;
-  type: "EXPENSE" | "INCOME" | "SAVING";
-  paymentMethod: string;
-  note: string;
-  transactionDate: string;
+interface Props {
+  transactions: Transaction[];
+  onEdit: (tx: Transaction) => void;
+  onDelete: (id: number) => void;
 }
 
-const transactions: Transaction[] = [
-  {
-    id: 1,
-    amount: 8000000,
-    type: "EXPENSE",
-    paymentMethod: "Bank",
-    note: "Lương tháng 9",
-    transactionDate: "2025-09-10T09:00:00",
-  },
-  {
-    id: 2,
-    amount: 2500000,
-    type: "INCOME",
-    paymentMethod: "Cash",
-    note: "Freelance project",
-    transactionDate: "2025-09-12T09:00:00",
-  },
-];
-
-export default function TransactionTable() {
-  const handleEdit = (id: number) => {
-    console.log("Edit transaction:", id);
-    // mở modal edit hoặc redirect
-  };
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN").format(amount);
+export default function TransactionTable({ transactions, onEdit, onDelete }: Props) {
+  const formatAmount = (amount: number, type: string) => {
+    return (
+      <span
+        className={`inline-flex items-center justify-end px-2 py-1 rounded-md text-sm font-medium ${
+          type === "EXPENSE"
+            ? "bg-red-50 text-red-600"
+            : type === "INCOME"
+            ? "bg-green-50 text-green-600"
+            : "bg-yellow-50 text-yellow-600"
+        }`}
+      >
+        {new Intl.NumberFormat("vi-VN").format(amount)}đ
+      </span>
+    );
   };
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left text-gray-600">
+      <table className="w-full table-fixed text-sm text-left text-gray-600">
         <thead className="text-xs text-gray-500 uppercase border-b">
           <tr>
             <th className="px-4 py-3">Date</th>
@@ -50,32 +36,21 @@ export default function TransactionTable() {
             <th className="px-4 py-3">Payment</th>
             <th className="px-4 py-3">Type</th>
             <th className="px-4 py-3 text-right">Amount</th>
-            <th className="px-4 py-3 text-center w-[50px]">Action</th>
+            <th className="px-4 py-3 text-center w-[70px]">Action</th>
           </tr>
         </thead>
-
         <tbody>
           {transactions.map((tx) => (
-            <tr
-              key={tx.id}
-              className="border-b last:border-0 hover:bg-gray-50 transition"
-            >
-              {/* DATE */}
+            <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50 transition">
               <td className="px-4 py-3 whitespace-nowrap">
                 {new Date(tx.transactionDate).toLocaleDateString("vi-VN")}
               </td>
-
-              {/* NOTE */}
               <td className="px-4 py-3 truncate">{tx.note}</td>
-
-              {/* PAYMENT */}
               <td className="px-4 py-3">
                 <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
                   {tx.paymentMethod}
                 </span>
               </td>
-
-              {/* TYPE */}
               <td className="px-4 py-3">
                 <span
                   className={`px-2 py-1 rounded-md text-xs font-medium ${
@@ -89,28 +64,21 @@ export default function TransactionTable() {
                   {tx.type}
                 </span>
               </td>
-
-              {/* AMOUNT */}
               <td className="px-4 py-3 text-right font-semibold">
-                <span
-                  className={`inline-flex items-center justify-end px-2 py-1 rounded-md text-sm font-medium ${
-                    tx.type === "EXPENSE"
-                      ? "bg-red-50 text-red-600"
-                      : "bg-green-50 text-green-600"
-                  }`}
-                >
-                  {formatAmount(tx.amount)}đ
-                </span>
+                {formatAmount(tx.amount, tx.type)}
               </td>
-
-              {/* ACTION */}
-              <td className="px-3 py-3 text-center">
+              <td className="px-4 py-3 text-center flex gap-2 justify-center">
                 <button
-                  onClick={() => handleEdit(tx.id)}
-                  className="p-1 text-blue-500 hover:text-blue-700"
-                  title="Edit"
+                  onClick={() => onEdit(tx)}
+                  className="text-blue-500 hover:text-blue-700"
                 >
                   <Pencil size={16} />
+                </button>
+                <button
+                  onClick={() => onDelete(tx.id!)}
+                  className="text-red-500 hover:text-red-700 text-sm"
+                >
+                  X
                 </button>
               </td>
             </tr>
