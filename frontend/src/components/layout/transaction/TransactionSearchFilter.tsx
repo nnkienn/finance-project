@@ -16,7 +16,11 @@ export default function TransactionSearchFilter({ onApply }: Props) {
   const [category, setCategory] = useState<string | null>(null);
 
   const handleApply = () => {
-    onApply({ startDate, endDate, category });
+    // format thành LocalDateTime chuẩn ISO
+    const formattedStart = startDate ? `${startDate}T00:00:00` : null;
+    const formattedEnd = endDate ? `${endDate}T23:59:59` : null;
+
+    onApply({ startDate: formattedStart, endDate: formattedEnd, category });
   };
 
   return (

@@ -16,6 +16,7 @@ import {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  filterTransactions, // 👈 thêm filter
 } from "@/store/slice/transactionSlice";
 import { fetchUserCategories } from "@/store/slice/userCategorySlice";
 import { Transaction } from "@/type/transaction";
@@ -69,6 +70,21 @@ export default function Homepage() {
     }
   };
 
+  // ✅ xử lý filter từ component
+  const handleFilter = (filters: {
+    startDate: string | null;
+    endDate: string | null;
+    category: string | null;
+  }) => {
+    dispatch(
+      filterTransactions({
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        type: filters.category as "EXPENSE" | "INCOME" | "SAVING" | undefined,
+      })
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <NavbarPrivate />
@@ -93,41 +109,10 @@ export default function Homepage() {
 
           {/* CENTER */}
           <div className="col-span-12 md:col-span-6 space-y-6">
-            {/* Summary cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full">
-              {/* Balance */}
-              <div className="bg-white rounded-xl shadow p-4 border-l-4 border-blue-500 h-full flex flex-col justify-center">
-                <p className="text-sm text-gray-500">My Balance</p>
-                <p className="text-xl font-bold">$128,320</p>
-              </div>
-
-              {/* Income */}
-              <div className="bg-white rounded-xl shadow p-4 border-l-4 border-green-500 h-full flex flex-col justify-center">
-                <p className="text-sm text-gray-500">Income</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-xl font-bold">$10,500</p>
-                  <span className="text-green-600 bg-green-100 text-xs font-medium px-2 py-0.5 rounded">
-                    ↑ 11.09%
-                  </span>
-                </div>
-              </div>
-
-              {/* Savings */}
-              <div className="bg-white rounded-xl shadow p-4 border-l-4 border-yellow-500 h-full flex flex-col justify-center">
-                <p className="text-sm text-gray-500">Savings</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-xl font-bold">$5,250</p>
-                  <span className="text-green-600 bg-green-100 text-xs font-medium px-2 py-0.5 rounded">
-                    ↑ 11.09%
-                  </span>
-                </div>
-              </div>
-
-              {/* Expenses */}
-              <div className="bg-white rounded-xl shadow p-4 border-l-4 border-orange-500 h-full flex flex-col justify-center">
-                <p className="text-sm text-gray-500">Expenses</p>
-                <p className="text-xl font-bold">$3,200</p>
-              </div>
+            {/* Filter */}
+            <div className="bg-white rounded-2xl shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Search & Filter</h2>
+              <TransactionSearchFilter onApply={handleFilter} />
             </div>
 
             {/* Transaction Section */}

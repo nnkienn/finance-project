@@ -1,32 +1,51 @@
+// src/store/slice/transactionSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { Transaction } from "@/type/transaction";
-import { transactionService, TransactionPayload } from "@/service/transactionService";
+import {
+  transactionService,
+  TransactionPayload,
+} from "@/service/transactionService";
 
 // =====================
 // Async thunks
 // =====================
-export const fetchTransactions = createAsyncThunk(
+export const fetchTransactions = createAsyncThunk<Transaction[]>(
   "transactions/fetchAll",
   async () => await transactionService.getUserTransactions()
 );
 
-export const createTransaction = createAsyncThunk(
+export const createTransaction = createAsyncThunk<Transaction, TransactionPayload>(
   "transactions/create",
-  async (data: TransactionPayload) => await transactionService.createTransaction(data)
+  async (data) => await transactionService.createTransaction(data)
 );
 
-export const updateTransaction = createAsyncThunk(
-  "transactions/update",
-  async ({ id, data }: { id: number; data: Partial<TransactionPayload> }) =>
-    await transactionService.updateTransaction(id, data)
+export const updateTransaction = createAsyncThunk<
+  Transaction,
+  { id: number; data: Partial<TransactionPayload> }
+>("transactions/update", async ({ id, data }) =>
+  transactionService.updateTransaction(id, data)
 );
 
-export const deleteTransaction = createAsyncThunk(
+export const deleteTransaction = createAsyncThunk<number, number>(
   "transactions/delete",
-  async (id: number) => {
+  async (id) => {
     await transactionService.deleteTransaction(id);
     return id;
   }
+);
+
+// Filter (non-paged)
+export const filterTransactions = createAsyncThunk<
+  Transaction[],
+  {
+    startDate?: string;
+    endDate?: string;
+    type?: "EXPENSE" | "INCOME" | "SAVING";
+    categoryId?: number;
+    paymentMethod?: string;
+  }
+>("transactions/filter", async (filters) =>
+  transactionService.getTransactionsFiltered(filters)
 );
 
 // =====================
@@ -89,6 +108,14 @@ const transactionSlice = createSlice({
         deleteTransaction.fulfilled,
         (state, action: PayloadAction<number>) => {
           state.items = state.items.filter((t) => t.id !== action.payload);
+        }
+      )
+
+      // filter
+      .addCase(
+        filterTransactions.fulfilled,
+        (state, action: PayloadAction<Transaction[]>) => {
+          state.items = action.payload;
         }
       );
   },
