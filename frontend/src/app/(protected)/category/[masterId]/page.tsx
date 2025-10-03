@@ -7,6 +7,7 @@ import { useAppSelector } from "@/hook/useAppSelector";
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
 import RightSidebar from "@/components/layout/masterCategory/MasterRightSidebar";
+
 import {
   fetchUserCategoriesByMaster,
   addUserCategory,
@@ -14,6 +15,11 @@ import {
   removeUserCategory,
   importDefaultUserCategory,
 } from "@/store/slice/userCategorySlice";
+
+import {
+  createTransaction, // 👈 thêm createTransaction
+} from "@/store/slice/transactionSlice";
+
 import { UserCategory } from "@/type/UserCategory";
 import { Transaction } from "@/type/transaction";
 
@@ -21,7 +27,7 @@ import UserCategoryHeader from "@/components/layout/userCategory/UserCategoryHea
 import UserCategorySearch from "@/components/layout/userCategory/UserCategorySearch";
 import UserCategoryGrid from "@/components/layout/userCategory/UserCategoryGrid";
 import UserCategoryModal from "@/components/layout/userCategory/UserCategoryModal";
-import CategoryTransactionModal from "@/components/layout/userCategory/CategoryTransactionModal"; // 👈 modal add transaction từ category
+import CategoryTransactionModal from "@/components/layout/userCategory/CategoryTransactionModal";
 
 export default function UserCategoryPage() {
   const { masterId } = useParams();
@@ -37,7 +43,7 @@ export default function UserCategoryPage() {
   const [formName, setFormName] = useState("");
   const [formIcon, setFormIcon] = useState("");
 
-  // 👇 state cho transaction modal
+  // state cho transaction modal
   const [selectedCategory, setSelectedCategory] = useState<UserCategory | null>(null);
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
 
@@ -100,16 +106,21 @@ export default function UserCategoryPage() {
     await dispatch(importDefaultUserCategory()).unwrap();
   };
 
-  // 👇 Add transaction từ category
+  // 👉 Add transaction từ category
   const handleAddTransaction = (cat: UserCategory) => {
     setSelectedCategory(cat);
     setIsTxModalOpen(true);
   };
 
-  // 👇 Lưu transaction mock (sau này connect Redux)
-  const handleCreateTransaction = (tx: Transaction) => {
-    console.log("New Transaction created:", tx);
-    // TODO: dispatch(addTransaction(tx))
+  // 👉 Tạo transaction thật bằng Redux
+  const handleCreateTransaction = async (tx: Omit<Transaction, "id">) => {
+    try {
+      await dispatch(createTransaction(tx)).unwrap();
+      alert("✅ Transaction created successfully!");
+    } catch (err) {
+      console.error("❌ Create transaction failed:", err);
+      alert("❌ Failed to create transaction. Check console for details.");
+    }
   };
 
   return (
@@ -150,7 +161,7 @@ export default function UserCategoryPage() {
                 categories={filteredCategories}
                 onEdit={handleOpenModal}
                 onDelete={handleDelete}
-                onAddTransaction={handleAddTransaction} // 👈 thêm props mới
+                onAddTransaction={handleAddTransaction} // 👈 mở modal transaction
               />
             </div>
           </div>
@@ -179,7 +190,7 @@ export default function UserCategoryPage() {
         open={isTxModalOpen}
         category={selectedCategory}
         onClose={() => setIsTxModalOpen(false)}
-        onCreate={handleCreateTransaction}
+        onCreate={handleCreateTransaction} // 👈 gọi redux khi bấm Save
       />
     </div>
   );
