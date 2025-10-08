@@ -1,11 +1,11 @@
 package com.finance.transaction.controller;
 
+import com.finance.transaction.dto.MonthlyCardsResponse;
 import com.finance.transaction.dto.TransactionRequest;
 import com.finance.transaction.dto.TransactionResponse;
 import com.finance.transaction.entity.PaymentMethod;
 import com.finance.transaction.entity.TransactionType;
 import com.finance.transaction.service.TransactionService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -57,45 +57,34 @@ public class TransactionController {
 
     // ================== FILTER & ANALYTICS ==================
 
-    /**
-     * Filter transactions (không phân trang)
-     */
     @GetMapping("/filter")
     public ResponseEntity<List<TransactionResponse>> getTransactionsFiltered(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) PaymentMethod paymentMethod
     ) {
-    	 System.out.println("DEBUG >>> start=" + startDate + ", end=" + endDate +
-                 ", type=" + type + ", categoryId=" + categoryId +
-                 ", method=" + paymentMethod);
         return ResponseEntity.ok(
                 transactionService.getTransactionsFiltered(startDate, endDate, type, categoryId, paymentMethod)
         );
     }
 
     /**
-     * Filter transactions (có phân trang + sort)
-     * Ví dụ: /api/transactions/filter-paged?page=0&size=10&sort=transactionDate,desc
+     * /api/transactions/filter-paged?page=0&size=10&sort=transactionDate,desc
      */
     @GetMapping("/filter-paged")
     public ResponseEntity<Page<TransactionResponse>> getTransactionsFilteredPaged(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) PaymentMethod paymentMethod,
-            Pageable pageable 
+            Pageable pageable
     ) {
         return ResponseEntity.ok(
                 transactionService.getTransactionsFilteredPaged(startDate, endDate, type, categoryId, paymentMethod, pageable)
@@ -107,6 +96,7 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.getLatestTransactions(limit));
     }
 
+    // ====== KPIs cơ bản (INCOME/EXPENSE/NET) - nếu bạn vẫn muốn giữ /summary kiểu Map ======
     @GetMapping("/summary")
     public ResponseEntity<Map<String, BigDecimal>> getMonthlySummary(
             @RequestParam int month,
@@ -115,19 +105,45 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.getMonthlySummary(month, year));
     }
 
+    // ====== Cards cho 4 ô: MyBalance / Income / Savings / Expenses (+% so với tháng trước) ======
+    @GetMapping("/cards")
+    public ResponseEntity<MonthlyCardsResponse> getMonthlyCards(
+            @RequestParam int month,
+            @RequestParam int year
+    ) {
+        return ResponseEntity.ok(transactionService.getMonthlyCards(month, year));
+    }
+
+    // ====== Pie theo DANH MỤC (All Expenses) ======
     @GetMapping("/category-breakdown")
     public ResponseEntity<Map<String, BigDecimal>> getCategoryBreakdown(
             @RequestParam int month,
-            @RequestParam int year
+            @RequestParam int year,
+            @RequestParam(defaultValue = "EXPENSE") TransactionType type // cho phép đổi sang INCOME nếu cần
     ) {
-        return ResponseEntity.ok(transactionService.getCategoryBreakdown(month, year));
+        return ResponseEntity.ok(transactionService.getCategoryBreakdown(month, year, type));
     }
 
+    // ====== Pie theo PHƯƠNG THỨC thanh toán ======
     @GetMapping("/payment-breakdown")
     public ResponseEntity<Map<String, BigDecimal>> getPaymentMethodBreakdown(
             @RequestParam int month,
-            @RequestParam int year
+            @RequestParam int year,
+            @RequestParam(defaultValue = "EXPENSE") TransactionType type
     ) {
-        return ResponseEntity.ok(transactionService.getPaymentMethodBreakdown(month, year));
+        return ResponseEntity.ok(transactionService.getPaymentMethodBreakdown(month, year, type));
+    }
+
+    // ====== Timeseries cho Money Flow ======
+    @GetMapping("/timeseries")
+    public ResponseEntity<?> getTimeseries(
+            @RequestParam String from,    // "2025-10-01"
+            @RequestParam String to,      // "2025-10-31"
+            @RequestParam(defaultValue = "DAILY") String granularity,
+            @RequestParam(defaultValue = "ALL") String scope
+    ) {
+        LocalDateTime start = LocalDateTime.parse(from + "T00:00:00");
+        LocalDateTime end   = LocalDateTime.parse(to   + "T23:59:59");
+        return ResponseEntity.ok(transactionService.getTimeseries(start, end, granularity, scope));
     }
 }

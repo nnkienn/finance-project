@@ -5,67 +5,83 @@ import { Transaction } from "@/type/transaction";
 
 const API_URL = "/api/transactions";
 
-// =====================
-// Types
-// =====================
+// ---------- Types ----------
 export interface TransactionPayload {
   amount: number;
-  type: TransactionType; // "EXPENSE" | "INCOME" | "SAVING"
-  paymentMethod: string; // "CASH" | "BANK" | "CARD"
+  type: TransactionType;              // "EXPENSE" | "INCOME" | "SAVING"
+  paymentMethod: string;              // hoặc enum riêng nếu bạn có
   note: string;
-  transactionDate: string; // ISO format
+  transactionDate: string;            // ISO: "2025-10-08T09:00:00"
   userCategoryId: number;
 }
 
-// Response của Spring Data Page
 export interface PagedResponse<T> {
   content: T[];
   totalPages: number;
   totalElements: number;
-  number: number; // page hiện tại
-  size: number;   // số record/trang
+  number: number;
+  size: number;
 }
 
-// =====================
-// Service
-// =====================
+// Dashboard cards
+export interface MonthlyCardsResponse {
+  myBalance: number;
+  income: number;
+  savings: number;
+  expenses: number;
+  incomePct: number;
+  savingsPct: number;
+  expensesPct: number;
+}
+
+// Simple summary map: { INCOME, EXPENSE, NET }
+export type SummaryMap = Record<string, number>;
+
+// Pie breakdown (BE trả về map)
+export type BreakdownMap = Record<string, number>;
+
+// Timeseries
+export interface TimeseriesPoint {
+  date: string;
+  income: number;
+  expense: number;
+  net: number;
+}
+export interface TimeseriesResponse {
+  points: TimeseriesPoint[];
+}
+
+// ---------- Service ----------
 export const transactionService = {
-  // Create
+  // CRUD
   async createTransaction(payload: TransactionPayload): Promise<Transaction> {
-    const res = await api.post(API_URL, payload);
-    return res.data;
+    const { data } = await api.post(API_URL, payload);
+    return data;
   },
 
-  // Get all
   async getUserTransactions(): Promise<Transaction[]> {
-    const res = await api.get(API_URL);
-    return res.data;
+    const { data } = await api.get(API_URL);
+    return data;
   },
 
-  // Get by id
   async getTransactionById(id: number): Promise<Transaction> {
-    const res = await api.get(`${API_URL}/${id}`);
-    return res.data;
+    const { data } = await api.get(`${API_URL}/${id}`);
+    return data;
   },
 
-  // Update
-  async updateTransaction(
-    id: number,
-    payload: Partial<TransactionPayload>
-  ): Promise<Transaction> {
-    const res = await api.put(`${API_URL}/${id}`, payload);
-    return res.data;
+  async updateTransaction(id: number, payload: Partial<TransactionPayload>): Promise<Transaction> {
+    const { data } = await api.put(`${API_URL}/${id}`, payload);
+    return data;
   },
 
-  // Delete
   async deleteTransaction(id: number): Promise<void> {
     await api.delete(`${API_URL}/${id}`);
   },
 
-  // Get latest
-  async getLatestTransactions(limit: number = 5): Promise<Transaction[]> {
-    const res = await api.get(`${API_URL}/latest`, { params: { limit } });
-    return res.data;
+  // Latest
+  async getLatestTransactions(limit = 5): Promise<Transaction[]> {
+    const { data } = await api.get(`${API_URL}/latest`, { params: { limit } });
+    return data;
   },
 
   // Filter (non-paged)
@@ -76,8 +92,8 @@ export const transactionService = {
     categoryId?: number;
     paymentMethod?: string;
   }): Promise<Transaction[]> {
-    const res = await api.get(`${API_URL}/filter`, { params });
-    return res.data;
+    const { data } = await api.get(`${API_URL}/filter`, { params });
+    return data;
   },
 
   // Filter + Pagination
@@ -89,9 +105,54 @@ export const transactionService = {
     paymentMethod?: string;
     page?: number;
     size?: number;
-    sort?: string; // ví dụ: "transactionDate,desc"
+    sort?: string; // "transactionDate,desc"
   }): Promise<PagedResponse<Transaction>> {
-    const res = await api.get(`${API_URL}/filter-paged`, { params });
-    return res.data;
+    const { data } = await api.get(`${API_URL}/filter-paged`, { params });
+    return data;
+  },
+
+  // ===== Dashboard cards (4 ô) =====
+  async getMonthlyCards(month: number, year: number): Promise<MonthlyCardsResponse> {
+    const { data } = await api.get(`${API_URL}/cards`, { params: { month, year } });
+    return data;
+  },
+
+  // (Optional) summary {INCOME, EXPENSE, NET}
+  async getMonthlySummary(month: number, year: number): Promise<SummaryMap> {
+    const { data } = await api.get(`${API_URL}/summary`, { params: { month, year } });
+    return data;
+  },
+
+  // Pie: category breakdown (All Expenses → type=EXPENSE)
+  async getCategoryBreakdown(
+    month: number,
+    year: number,
+    type: TransactionType = "EXPENSE"
+  ): Promise<BreakdownMap> {
+    const { data } = await api.get(`${API_URL}/category-breakdown`, { params: { month, year, type } });
+    return data;
+  },
+
+  // Pie: payment method breakdown
+  async getPaymentBreakdown(
+    month: number,
+    year: number,
+    type: TransactionType = "EXPENSE"
+  ): Promise<BreakdownMap> {
+    const { data } = await api.get(`${API_URL}/payment-breakdown`, { params: { month, year, type } });
+    return data;
+  },
+
+  // Timeseries for Money Flow
+  async getTimeseries(params: {
+    from: string; // "YYYY-MM-DD"
+    to: string;   // "YYYY-MM-DD"
+    granularity?: "DAILY" | "WEEKLY" | "MONTHLY";
+    scope?: "ALL" | "INCOME" | "EXPENSE";
+  }): Promise<TimeseriesResponse> {
+    const { data } = await api.get(`${API_URL}/timeseries`, {
+      params: { granularity: "DAILY", scope: "ALL", ...params },
+    });
+    return data;
   },
 };
