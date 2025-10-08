@@ -2,6 +2,8 @@ package com.finance.transaction.entity;
 
 import com.finance.auth.entity.User;
 import com.finance.category.entity.UserCategory;
+import com.finance.saving.entity.SavingGoal;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -47,4 +49,11 @@ public class Transaction {
     /** Back-ref: giao dịch này được tạo từ occurrence nào (nếu có) */
     @OneToOne(mappedBy = "postedTransaction", fetch = FetchType.LAZY)
     private com.finance.recurring.entity.RecurringOccurrence recurringOccurrence;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "saving_goal_id")
+    private SavingGoal savingGoal;
+    
+    
+
 }

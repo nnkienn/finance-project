@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.finance.category.entity.UserCategory;
+import com.finance.saving.entity.SavingGoal;
 import com.finance.transaction.entity.Transaction;
 
 import jakarta.persistence.CascadeType;
@@ -76,4 +77,9 @@ public class User {
 	  /** Transactions của user */
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaction> transactions = new ArrayList<>();
+    
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SavingGoal> savingGoals = new ArrayList<>();
+    
 }
