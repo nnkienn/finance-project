@@ -3,17 +3,23 @@
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
 import SummaryCards from "@/components/layout/homepage/SummaryCards";
-import MoneyFlowChart from "@/components/layout/homepage/MoneyFlowChart";
-import RightSidebar from "@/components/layout/homepage/RightSidebar";
+import MoneyFlowGradientChart from "@/components/layout/homepage/MoneyFlowChart";
+import MySavings from "@/components/layout/homepage/MySavings";
+import ExpensesPie from "@/components/layout/homepage/ExpensesPie";
+import HistoryTransactions from "@/components/layout/homepage/HistoryTransactions";
 
 export default function Homepage() {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <NavbarPrivate />
 
       <main className="pt-24 px-4 md:px-8 lg:px-12">
         <div className="grid grid-cols-12 gap-6">
-          {/* LEFT */}
+          {/* LEFT CARD */}
           <div className="col-span-12 md:col-span-3">
             <h2 className="text-lg font-semibold mb-4">My Card</h2>
             <CardInfo
@@ -29,19 +35,38 @@ export default function Homepage() {
             />
           </div>
 
-          {/* CENTER */}
-          <div className="col-span-12 md:col-span-6 space-y-6">
-            <SummaryCards defaultMonth={9} defaultYear={2025} />
-            <MoneyFlowChart
-              defaultFrom="2025-09-01"
-              defaultTo="2025-09-31"
-              defaultGranularity="DAILY"
-            />
-          </div>
+          {/* CENTER CONTENT */}
+          <div className="col-span-12 md:col-span-9 space-y-6">
+            {/* Summary Cards */}
+            <SummaryCards defaultMonth={month} defaultYear={year} />
 
-          {/* RIGHT */}
-          <div className="col-span-12 md:col-span-3">
-            <RightSidebar defaultMonth={8} defaultYear={2025} />
+            {/* Row 1: Money Flow + My Savings */}
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:col-span-8">
+                <MoneyFlowGradientChart />
+              </div>
+              <div className="col-span-12 lg:col-span-4">
+                <MySavings />
+              </div>
+            </div>
+
+           {/* Row 2: All Expenses + History Transactions */}
+<div className="grid grid-cols-12 gap-6 items-stretch">
+  {/* All Expenses */}
+  <div className="col-span-12 lg:col-span-6">
+    <div className="h-full min-h-[320px]">
+      <ExpensesPie defaultMonth={month} defaultYear={year} />
+    </div>
+  </div>
+
+  {/* History Transactions */}
+  <div className="col-span-12 lg:col-span-6">
+    <div className="h-full min-h-[320px]">
+      <HistoryTransactions />
+    </div>
+  </div>
+</div>
+
           </div>
         </div>
       </main>
