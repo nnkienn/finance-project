@@ -2,6 +2,8 @@ package com.finance.config;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletResponse; // ✅ thêm import này
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -49,7 +51,8 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, RoleHierarchy roleHierarchy) {
-        return new JwtAuthenticationFilter(jwtService, roleHierarchy);
+        // ✅ truyền thêm userDetailsService vào filter
+        return new JwtAuthenticationFilter(jwtService, roleHierarchy, userDetailsService);
     }
 
     @Bean
@@ -72,6 +75,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ preflight
                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                 .requestMatchers("/auth/**", "/h2-console/**", "/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/").permitAll()
@@ -80,7 +84,20 @@ public class SecurityConfig {
             )
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .authenticationProvider(authenticationProvider)
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            // ✅ trả 401 khi chưa xác thực, 403 khi thiếu quyền
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, e) -> {
+                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"message\":\"Unauthorized\"}");
+                })
+                .accessDeniedHandler((req, res, e) -> {
+                    res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"message\":\"Forbidden\"}");
+                })
+            );
 
         return http.build();
     }
@@ -91,21 +108,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() { 
-        return new BCryptPasswordEncoder(); 
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowCredentials(true); // cần cho cookie (refresh_token)
-
-        // ✅ DEV: cho phép tất cả localhost:* (Next.js dev server đổi port)
+        configuration.setAllowCredentials(true);
         configuration.setAllowedOriginPatterns(List.of("http://localhost:*"));
-
-        // ✅ PROD: khi deploy FE ở domain cố định -> dùng cái này thay cho dev
-        // configuration.setAllowedOrigins(List.of("https://myfinance-app.com"));
-
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
