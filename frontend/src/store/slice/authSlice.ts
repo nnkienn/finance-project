@@ -15,7 +15,7 @@ const initialState: AuthState = {
   error: null,
 };
 
-// LOGIN
+// 🔐 LOGIN
 export const loginUser = createAsyncThunk(
   "auth/login",
   async (data: { email: string; password: string }, { rejectWithValue }) => {
@@ -30,7 +30,7 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-// FETCH ME
+// 👤 FETCH ME
 export const meUser = createAsyncThunk(
   "auth/me",
   async (_, { rejectWithValue }) => {
@@ -44,7 +44,7 @@ export const meUser = createAsyncThunk(
   }
 );
 
-// REGISTER
+// 📝 REGISTER
 export const registerUser = createAsyncThunk(
   "auth/register",
   async (
@@ -52,11 +52,7 @@ export const registerUser = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      return await AuthService.register(
-        data.fullName,
-        data.email,
-        data.password
-      ); // Có thể trả AuthResponse hoặc message
+      return await AuthService.register(data.fullName, data.email, data.password);
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || error.message || "Register failed"
@@ -65,7 +61,7 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-// REFRESH ACCESS TOKEN
+// 🔄 REFRESH TOKEN
 export const refreshAccessToken = createAsyncThunk(
   "auth/refresh",
   async (_, { rejectWithValue }) => {
@@ -79,6 +75,41 @@ export const refreshAccessToken = createAsyncThunk(
   }
 );
 
+// 🧩 UPDATE PROFILE (email optional)
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (
+    data: { fullName?: string; email?: string; avatarUrl?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await AuthService.updateMe(data);
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Update profile failed"
+      );
+    }
+  }
+);
+
+// 🔐 CHANGE PASSWORD
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (
+    data: { currentPassword: string; newPassword: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await AuthService.changePassword(data.currentPassword, data.newPassword);
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Change password failed"
+      );
+    }
+  }
+);
+
+// 🧱 Slice chính
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -106,29 +137,23 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        loginUser.fulfilled,
-        (state, action: PayloadAction<AuthResponse>) => {
-          state.loading = false;
-          state.accessToken = action.payload.accessToken;
-          state.error = null;
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<AuthResponse>) => {
+        state.loading = false;
+        state.accessToken = action.payload.accessToken;
+        state.error = null;
 
-          localStorage.setItem(
-            "auth",
-            JSON.stringify({
-              user: state.user,
-              accessToken: state.accessToken,
-            })
-          );
-          document.cookie = `accessToken=${state.accessToken}; path=/;`;
-        }
-      )
+        localStorage.setItem(
+          "auth",
+          JSON.stringify({ user: state.user, accessToken: state.accessToken })
+        );
+        document.cookie = `accessToken=${state.accessToken}; path=/;`;
+      })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
 
-      // ME
+      // FETCH ME
       .addCase(meUser.fulfilled, (state, action: PayloadAction<MeResponse>) => {
         state.user = action.payload;
         localStorage.setItem(
@@ -151,10 +176,7 @@ const authSlice = createSlice({
           document.cookie = `accessToken=${state.accessToken}; path=/;`;
           localStorage.setItem(
             "auth",
-            JSON.stringify({
-              user: state.user,
-              accessToken: state.accessToken,
-            })
+            JSON.stringify({ user: state.user, accessToken: state.accessToken })
           );
         }
       })
@@ -176,7 +198,21 @@ const authSlice = createSlice({
             state.user = parsed.user;
           }
         }
-      );
+      )
+
+      // UPDATE PROFILE
+      .addCase(updateProfile.fulfilled, (state, action: PayloadAction<MeResponse>) => {
+        state.user = action.payload;
+        localStorage.setItem(
+          "auth",
+          JSON.stringify({ user: state.user, accessToken: state.accessToken })
+        );
+      })
+
+      // CHANGE PASSWORD
+      .addCase(changePassword.fulfilled, (state) => {
+        console.log("✅ Password changed successfully");
+      });
   },
 });
 

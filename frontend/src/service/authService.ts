@@ -26,26 +26,31 @@ export interface MeResponse {
 }
 
 export const AuthService = {
+  // 🔐 Login
   login: async (email: string, password: string): Promise<AuthResponse> => {
     const res = await api.post<AuthResponse>("/auth/login", { email, password });
     return res.data;
   },
 
+  // 📝 Register
   register: async (fullName: string, email: string, password: string) => {
     const res = await api.post("/auth/register", { fullName, email, password });
     return res.data;
   },
 
+  // 🔄 Refresh token
   refresh: async (): Promise<AuthResponse> => {
     const res = await api.post<AuthResponse>("/auth/refresh");
     return res.data;
   },
 
+  // 🚪 Logout
   logout: async () => {
     const res = await api.post("/auth/logout");
     return res.data;
   },
 
+  // 🔑 Change password
   changePassword: async (currentPassword: string, newPassword: string) => {
     const res = await api.post("/auth/change-password", {
       currentPassword,
@@ -54,13 +59,20 @@ export const AuthService = {
     return res.data;
   },
 
+  // 👤 Get user info
   me: async (): Promise<MeResponse> => {
     const res = await api.get<MeResponse>("/me");
     return res.data;
   },
+
+  // 🧩 Update user info (optional fields)
+  updateMe: async (data: { fullName?: string; email?: string; avatarUrl?: string }) => {
+    const res = await api.patch("/me", data);
+    return res.data;
+  },
 };
 
-// helper
+// ⚠️ Helper — dùng để bắt lỗi Axios gọn gàng
 function handleError(err: unknown, fallbackMsg: string): never {
   if (axios.isAxiosError(err)) {
     const axiosErr = err as AxiosError<ApiError>;

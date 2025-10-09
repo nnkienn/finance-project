@@ -75,13 +75,18 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ preflight
-                .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
-                .requestMatchers("/auth/**", "/h2-console/**", "/error").permitAll()
-                .requestMatchers(HttpMethod.GET, "/").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
+            	    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ preflight
+            	    .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+            	    .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+            	    .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+            	    // ❌ bỏ "/auth/**"
+            	    .requestMatchers("/h2-console/**", "/error").permitAll()
+            	    .requestMatchers(HttpMethod.GET, "/").permitAll()
+            	    .requestMatchers("/admin/**").hasRole("ADMIN")
+            	    // ✅ các request còn lại (bao gồm /auth/change-password, /me) cần token
+            	    .anyRequest().authenticated()
+            	)
+
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -117,7 +122,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
         configuration.setAllowedOriginPatterns(List.of("http://localhost:*"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
 
