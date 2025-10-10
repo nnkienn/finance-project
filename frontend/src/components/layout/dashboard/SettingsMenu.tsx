@@ -1,4 +1,8 @@
 "use client";
+import Link from "next/link";
+import { useEffect, useRef } from "react";
+import { useAppDispatch } from "@/hook/useAppDispatch";
+import { logout } from "@/store/slice/authSlice";
 import { User, Bell, Palette, CreditCard, LogOut } from "lucide-react";
 
 export default function SettingsMenu({
@@ -8,11 +12,45 @@ export default function SettingsMenu({
   open: boolean;
   onToggle: () => void;
 }) {
+  const dispatch = useAppDispatch();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 🧠 Đóng menu khi click ra ngoài (sau 50ms để không đụng với click mở)
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onToggle();
+      }
+    };
+
+    let timeoutId: NodeJS.Timeout;
+    if (open) {
+      timeoutId = setTimeout(() => {
+        document.addEventListener("click", handleClickOutside);
+      }, 50);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [open, onToggle]);
+
+  // 🚪 Logout
+  const handleLogout = () => {
+    dispatch(logout());
+    window.location.href = "/profile";
+  };
+
   return (
-    <div className="relative">
+    <div className="relative select-none" ref={menuRef}>
+      {/* ⚙️ Nút settings */}
       <div
-        onClick={onToggle}
-        className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 cursor-pointer hover:bg-gray-200"
+        onClick={(e) => {
+          e.stopPropagation(); // ⛔ không lan sự kiện
+          onToggle();
+        }}
+        className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 cursor-pointer hover:bg-gray-200 transition"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -31,22 +69,39 @@ export default function SettingsMenu({
         </svg>
       </div>
 
+      {/* ⚡ Dropdown menu */}
       {open && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-md ring-1 ring-black/5 p-2 z-50 origin-top-right animate-dropdown">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg ring-1 ring-black/5 p-2 z-[9999] origin-top-right transition-all duration-150 ease-out animate-fade-in"
+        >
           <ul className="flex flex-col gap-1 text-sm font-medium text-gray-600">
-            <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-purple-50 hover:text-purple-600 cursor-pointer transition">
-              <User size={16} /> Profile
+            <li>
+              <Link
+                href="/settings"
+                onClick={onToggle}
+                className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-pink-50 hover:text-pink-600 transition"
+              >
+                <User size={16} /> Profile
+              </Link>
             </li>
-            <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-purple-50 hover:text-purple-600 cursor-pointer transition">
+
+            <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-pink-50 hover:text-pink-600 cursor-pointer transition">
               <Bell size={16} /> Notifications
             </li>
-            <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-purple-50 hover:text-purple-600 cursor-pointer transition">
+
+            <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-pink-50 hover:text-pink-600 cursor-pointer transition">
               <Palette size={16} /> Theme & Language
             </li>
-            <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-purple-50 hover:text-purple-600 cursor-pointer transition">
+
+            <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-pink-50 hover:text-pink-600 cursor-pointer transition">
               <CreditCard size={16} /> Billing
             </li>
-            <li className="flex items-center gap-2 px-3 py-2 rounded-md text-red-500 hover:bg-red-50 cursor-pointer transition">
+
+            <li
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-red-500 hover:bg-red-50 cursor-pointer transition"
+            >
               <LogOut size={16} /> Logout
             </li>
           </ul>

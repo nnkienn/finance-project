@@ -4,6 +4,7 @@ import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";
 import { changePassword, updateProfile } from "@/store/slice/authSlice";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function SettingsPage() {
   const dispatch = useAppDispatch();
@@ -11,12 +12,14 @@ export default function SettingsPage() {
 
   const [avatar, setAvatar] = useState<string | null>(user?.avatarUrl || null);
   const [fullName, setFullName] = useState<string>(user?.fullName || "");
-  const [currentPassword, setCurrentPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-
   const [accountError, setAccountError] = useState<string>("");
-  const [passwordError, setPasswordError] = useState<string>("");
+
+  // modal password
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   // 🖼️ Chọn ảnh
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,10 +31,10 @@ export default function SettingsPage() {
     }
   };
 
-  // 👤 Cập nhật thông tin người dùng (chỉ fullName + avatar)
+  // 👤 Cập nhật thông tin người dùng
   const handleAccountSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!fullName) {
+    if (!fullName.trim()) {
       setAccountError("Full name is required.");
       return;
     }
@@ -48,7 +51,6 @@ export default function SettingsPage() {
   // 🔐 Đổi mật khẩu
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordError("Please fill in all fields.");
       return;
@@ -66,6 +68,7 @@ export default function SettingsPage() {
     try {
       await dispatch(changePassword({ currentPassword, newPassword })).unwrap();
       alert("✅ Password updated successfully!");
+      setShowPasswordModal(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -75,132 +78,142 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-100 text-gray-800">
       <NavbarPrivate />
 
-      <main className="pt-24 px-4 md:px-8 lg:px-12">
-        <div className="grid grid-cols-12 gap-8">
-          {/* LEFT: Profile Card */}
-          <div className="col-span-12 md:col-span-4">
-            <div className="bg-white rounded-2xl shadow p-6 text-center">
-              <div className="relative w-28 h-28 mx-auto mb-4">
-                <img
-                  src={avatar || "/default-avatar.png"}
-                  alt="Avatar"
-                  className="w-28 h-28 rounded-full object-cover border-4 border-pink-400"
-                />
-                <label
-                  htmlFor="avatar"
-                  className="absolute bottom-0 right-0 bg-pink-500 text-white text-xs px-2 py-1 rounded-full cursor-pointer"
-                >
-                  Change
-                </label>
-                <input
-                  id="avatar"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                />
-              </div>
-              <h2 className="text-lg font-semibold">{fullName || "Your Name"}</h2>
-              <p className="text-sm text-gray-500">{user?.email || "your@email.com"}</p>
-            </div>
+      <main className="flex flex-col items-center pt-28 px-4">
+        {/* Profile Card */}
+        <motion.div
+          className="bg-white shadow-lg rounded-3xl p-8 w-full max-w-md text-center relative"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="relative w-32 h-32 mx-auto mb-5">
+            <img
+              src={avatar || "/default-avatar.png"}
+              alt="Avatar"
+              className="w-32 h-32 rounded-full object-cover border-4 border-pink-400 shadow-md"
+            />
+            <label
+              htmlFor="avatar"
+              className="absolute bottom-1 right-1 bg-pink-500 hover:bg-pink-600 transition text-white text-xs px-3 py-1 rounded-full cursor-pointer"
+            >
+              Change
+            </label>
+            <input id="avatar" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
           </div>
 
-          {/* RIGHT: Settings Form */}
-          <div className="col-span-12 md:col-span-8 space-y-8">
-            {/* Account Info */}
-            <div className="bg-white rounded-2xl shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
-              <form className="space-y-4" onSubmit={handleAccountSubmit}>
-                <div>
-                  <label className="text-sm text-gray-600">Full Name</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  />
-                </div>
+          <h2 className="text-xl font-semibold mb-1">{fullName || "Your Name"}</h2>
+          <p className="text-gray-500 text-sm mb-6">{user?.email}</p>
 
-                <div>
-                  <label className="text-sm text-gray-600">Email Address</label>
-                  <input
-                    type="email"
-                    value={user?.email || ""}
-                    disabled
-                    className="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100 text-gray-500 cursor-not-allowed"
-                  />
-                </div>
-
-                {accountError && <p className="text-sm text-red-500">{accountError}</p>}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`px-4 py-2 bg-pink-500 text-white rounded-lg font-medium hover:bg-pink-600 ${
-                    loading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {loading ? "Saving..." : "Save Changes"}
-                </button>
-              </form>
+          <form className="space-y-4 text-left" onSubmit={handleAccountSubmit}>
+            <div>
+              <label className="text-sm text-gray-600">Full Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Enter your full name"
+                className="w-full border rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-pink-400"
+              />
             </div>
 
-            {/* Change Password */}
-            <div className="bg-white rounded-2xl shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Change Password</h3>
-              <form className="space-y-4" onSubmit={handlePasswordSubmit}>
-                <div>
-                  <label className="text-sm text-gray-600">Current Password</label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
-                    className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  />
-                </div>
+            {accountError && <p className="text-sm text-red-500">{accountError}</p>}
 
-                <div>
-                  <label className="text-sm text-gray-600">New Password</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  />
-                </div>
+            <div className="flex justify-between items-center mt-6">
+              <button
+                type="submit"
+                disabled={loading}
+                className={`px-5 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-xl transition font-medium ${
+                  loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
 
-                <div>
-                  <label className="text-sm text-gray-600">Confirm Password</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  />
-                </div>
-
-                {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`px-4 py-2 bg-pink-500 text-white rounded-lg font-medium hover:bg-pink-600 ${
-                    loading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {loading ? "Updating..." : "Update Password"}
-                </button>
-              </form>
+              <button
+                type="button"
+                onClick={() => setShowPasswordModal(true)}
+                className="text-sm text-pink-500 hover:text-pink-600 underline font-medium"
+              >
+                Change Password
+              </button>
             </div>
-          </div>
-        </div>
+          </form>
+        </motion.div>
+
+        {/* Password Modal */}
+        <AnimatePresence>
+          {showPasswordModal && (
+            <motion.div
+              className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white rounded-2xl shadow-xl p-8 w-[90%] max-w-md relative"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+              >
+                <h3 className="text-lg font-semibold mb-4 text-center">Change Password</h3>
+                <form className="space-y-4" onSubmit={handlePasswordSubmit}>
+                  <div>
+                    <label className="text-sm text-gray-600">Current Password</label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">New Password</label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Confirm Password</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+                  {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
+                  <div className="flex justify-end gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordModal(false)}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className={`px-5 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-xl font-medium transition ${
+                        loading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {loading ? "Updating..." : "Update Password"}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

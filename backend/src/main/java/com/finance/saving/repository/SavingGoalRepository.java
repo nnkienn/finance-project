@@ -57,4 +57,9 @@ public interface SavingGoalRepository extends JpaRepository<SavingGoal, Long> {
         WHERE g.user.id = :userId
     """)
     List<Object[]> getGoalProgressByUser(@Param("userId") Long userId);
+    
+    
+ long countByUserIdAndStatus(Long userId, com.finance.saving.entity.SavingGoalStatus status);
+ boolean existsByIdAndUserId(Long id, Long userId);
+
 }

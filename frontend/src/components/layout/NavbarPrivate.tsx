@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // 👈 hook để lấy URL hiện tại
+import { usePathname } from "next/navigation";
 import {
   Search,
   LayoutGrid,
   Shuffle,
   FileText,
   Activity,
+  PiggyBank, // 🐷 thay icon mới
   Menu,
   X,
 } from "lucide-react";
@@ -22,7 +23,7 @@ interface TabItem {
 }
 
 export default function NavbarPrivate() {
-  const pathname = usePathname(); // 👈 URL hiện tại
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<"settings" | "notifications" | null>(
     null
@@ -48,6 +49,12 @@ export default function NavbarPrivate() {
       link: "/category",
     },
     {
+      id: "saving",
+      label: "Saving",
+      icon: <PiggyBank size={16} />, // 🐷 icon heo đất tiết kiệm
+      link: "/saving",
+    },
+    {
       id: "activity",
       label: "Activity",
       icon: <Activity size={16} />,
@@ -56,7 +63,6 @@ export default function NavbarPrivate() {
   ];
 
   const renderTabButton = (tab: TabItem, mobile = false) => {
-    // ✅ active khi pathname trùng hoặc bắt đầu bằng tab.link
     const isActive =
       pathname === tab.link || pathname.startsWith(tab.link + "/");
 
@@ -83,6 +89,7 @@ export default function NavbarPrivate() {
     );
   };
 
+  // 👇 giữ nguyên phần còn lại
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white shadow-sm">
       <div className="max-w-7xl mx-auto w-full h-full flex items-center justify-between px-4 md:px-8">
@@ -97,7 +104,7 @@ export default function NavbarPrivate() {
           />
         </div>
 
-        {/* Desktop center */}
+        {/* Center nav (desktop) */}
         <div className="hidden md:flex flex-1 items-center justify-center gap-6">
           <div className="flex items-center w-56 bg-gray-100 rounded-full px-3 py-1.5 gap-2">
             <Search size={16} className="text-gray-500" />
@@ -138,14 +145,16 @@ export default function NavbarPrivate() {
             />
           </div>
 
-          <img
-            src="/images/avatar.png"
-            alt="User"
-            className="w-9 h-9 rounded-full border object-cover cursor-pointer"
-          />
+          <Link href="/profile">
+            <img
+              src="/images/avatar.png"
+              alt="User"
+              className="w-9 h-9 rounded-full border object-cover cursor-pointer hover:ring-2 hover:ring-pink-400 transition"
+            />
+          </Link>
         </div>
 
-        {/* Right mobile */}
+        {/* Mobile right */}
         <div className="flex md:hidden items-center gap-3">
           <div className="relative">
             <NotificationsMenu
@@ -174,25 +183,6 @@ export default function NavbarPrivate() {
           </button>
         </div>
       </div>
-
-      {/* Mobile full menu */}
-      {mobileOpen && (
-        <div className="md:hidden fixed top-12 left-0 right-0 bottom-0 bg-white shadow-md animate-dropdown overflow-y-auto z-40">
-          <div className="p-4 flex flex-col gap-4">
-            <div className="flex items-center w-full bg-gray-100 rounded-full px-3 py-1.5 gap-2">
-              <Search size={16} className="text-gray-500" />
-              <input
-                type="text"
-                placeholder="Search"
-                className="bg-transparent w-full outline-none text-sm"
-              />
-            </div>
-            <nav className="flex flex-col gap-2 mt-4">
-              {tabs.map((tab) => renderTabButton(tab, true))}
-            </nav>
-          </div>
-        </div>
-      )}
     </header>
   );
 }
