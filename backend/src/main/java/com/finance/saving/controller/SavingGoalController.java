@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.finance.saving.dto.SavingGoalRequest;
 import com.finance.saving.dto.SavingGoalResponse;
 import com.finance.saving.dto.SavingGoalUpdateRequest;
+import com.finance.saving.dto.SavingHistoryDto;
+import com.finance.saving.entity.SavingHistory;
+import com.finance.saving.repository.SavingHistoryRepository;
 import com.finance.saving.service.SavingGoalService;
 
 import jakarta.validation.Valid;
@@ -26,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/saving-goals")
 public class SavingGoalController {
 	private final SavingGoalService savingGoalService;
+	private final SavingHistoryRepository savingHistoryRepository;
 
 	@PostMapping()
 	@PreAuthorize("isAuthenticated()")
@@ -59,5 +63,25 @@ public class SavingGoalController {
 		savingGoalService.delete(id);
 		return ResponseEntity.noContent().build();
 	}
+	
+	
+	@GetMapping("/{id}/history")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<List<SavingHistoryDto>> getHistory(@PathVariable Long id) {
+	    List<SavingHistoryDto> list = savingHistoryRepository.findBySavingGoalIdOrderByTimestampAsc(id)
+	        .stream()
+	        .map(h -> new SavingHistoryDto(
+	                h.getId(),
+	                h.getAction(),
+	                h.getAmount(),
+	                h.getTotalAfter(),
+	                h.getTimestamp()
+	        ))
+	        .toList();
+
+	    return ResponseEntity.ok(list);
+	}
+
+
 
 }

@@ -10,9 +10,11 @@ import com.finance.auth.util.SecurityUtils;
 import com.finance.config.SecurityConfig;
 import com.finance.saving.dto.SavingGoalProgressDto;
 import com.finance.saving.dto.SavingSummaryDto;
+import com.finance.saving.dto.SavingTrendPoint;
 import com.finance.saving.entity.SavingGoal;
 import com.finance.saving.entity.SavingGoalStatus;
 import com.finance.saving.repository.SavingGoalRepository;
+import com.finance.transaction.repository.TransactionRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SavingGoalAnalyticsService {
     private final SavingGoalRepository savingGoalRepository;
+    private final TransactionRepository transactionRepository;
 
 	
     public List<SavingGoalProgressDto> getGoalProgress() {
@@ -51,5 +54,18 @@ public class SavingGoalAnalyticsService {
                 .count();
 
         return new SavingSummaryDto(totalSaved, totalGoals, achieved, active);
+    }
+    
+    public List<SavingTrendPoint> getTrend(String granularity) {
+        User user = SecurityUtils.getCurrentUser();
+
+        List<Object[]> rows = switch ((granularity == null ? "MONTHLY" : granularity).toUpperCase()) {
+            case "WEEKLY" -> transactionRepository.getSavingTrendByWeek(user.getId());
+            default -> transactionRepository.getSavingTrendByMonth(user.getId());
+        };
+
+        return rows.stream()
+                .map(r -> new SavingTrendPoint((String) r[0], (BigDecimal) r[1]))
+                .toList();
     }
 }

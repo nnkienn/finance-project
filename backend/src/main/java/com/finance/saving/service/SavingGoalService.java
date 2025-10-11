@@ -14,7 +14,9 @@ import com.finance.saving.dto.SavingGoalResponse;
 import com.finance.saving.dto.SavingGoalUpdateRequest;
 import com.finance.saving.entity.SavingGoal;
 import com.finance.saving.entity.SavingGoalStatus;
+import com.finance.saving.entity.SavingHistory;
 import com.finance.saving.repository.SavingGoalRepository;
+import com.finance.saving.repository.SavingHistoryRepository;
 import com.finance.transaction.entity.Transaction;
 import com.finance.transaction.entity.TransactionType;
 
@@ -25,6 +27,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class SavingGoalService {
 	private final SavingGoalRepository savingGoalRepository;
+    private final SavingHistoryRepository savingHistoryRepository;
+
 	//==========================CRUD=======================
 	@Transactional
 	public SavingGoalResponse create(@Valid SavingGoalRequest req) {
@@ -80,12 +84,21 @@ public class SavingGoalService {
 	    BigDecimal updated = current.add(tx.getAmount());
 	    goal.setCurrentAmount(updated);
 
-	    if (goal.getTargetAmount() != null &&
-	        updated.compareTo(goal.getTargetAmount()) >= 0) {
+	    if (goal.getTargetAmount() != null && updated.compareTo(goal.getTargetAmount()) >= 0) {
 	        goal.setStatus(SavingGoalStatus.ACHIEVED);
 	    }
 
 	    savingGoalRepository.save(goal);
+
+	    // ✅ Lưu lịch sử tiết kiệm
+	    SavingHistory history = SavingHistory.builder()
+	            .savingGoal(goal)
+	            .user(goal.getUser())
+	            .action("Deposit")
+	            .amount(tx.getAmount())
+	            .totalAfter(updated)
+	            .build();
+	    savingHistoryRepository.save(history);
 	}
 
 	 // ===== helpers =====
