@@ -12,6 +12,7 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/category") ||
     pathname.startsWith("/my-categories") ||
     pathname.startsWith("/transaction") ||
+    pathname.startsWith("/saving") ||
     pathname.startsWith("/profile");
 
   // chưa login mà vào protected route
@@ -39,6 +40,7 @@ export const config = {
     "/category/:path*",
     "/my-categories/:path*",
     "/transaction/:path*",
+    "/saving/:path*",
     "/profile/:path*",
   ],
 };

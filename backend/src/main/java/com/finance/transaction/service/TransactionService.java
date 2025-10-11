@@ -19,6 +19,8 @@ import com.finance.category.entity.UserCategory;
 import com.finance.category.repository.UserCategoryRepository;
 import com.finance.kafka.dto.TransactionEventDTO;
 import com.finance.kafka.producer.TransactionEventPublisher;
+import com.finance.saving.entity.SavingGoal;
+import com.finance.saving.service.SavingGoalService;
 import com.finance.transaction.dto.MonthlyCardsResponse;
 import com.finance.transaction.dto.TimeseriesPoint;
 import com.finance.transaction.dto.TimeseriesResponse;
@@ -43,6 +45,7 @@ public class TransactionService implements RecurringPostingPort {
     private final TransactionRepository transactionRepository;
     private final UserCategoryRepository userCategoryRepository;
     private final TransactionEventPublisher transactionEventPublisher;
+    private final SavingGoalService savingGoalService;
 
     // ================== CRUD ==================
 
@@ -64,7 +67,18 @@ public class TransactionService implements RecurringPostingPort {
         tx.setUser(user);
         tx.setUserCategory(userCategory);
 
+        if(tx.getType() == TransactionType.SAVING && request.getSavingGoalId() !=null) {
+        	SavingGoal goal = savingGoalService.requireOwnedGoal(request.getSavingGoalId());
+        	tx.setSavingGoal(goal);
+        }
+        
+        
         tx = transactionRepository.save(tx);
+        
+        if (tx.getType() == TransactionType.SAVING) {
+            savingGoalService.updateProgressFromTransaction(tx);
+        }
+
 
         transactionEventPublisher.publish(new TransactionEventDTO(
             tx.getId(), user.getId(), tx.getAmount(),

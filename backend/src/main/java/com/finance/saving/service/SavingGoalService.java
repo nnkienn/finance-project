@@ -15,6 +15,8 @@ import com.finance.saving.dto.SavingGoalUpdateRequest;
 import com.finance.saving.entity.SavingGoal;
 import com.finance.saving.entity.SavingGoalStatus;
 import com.finance.saving.repository.SavingGoalRepository;
+import com.finance.transaction.entity.Transaction;
+import com.finance.transaction.entity.TransactionType;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -66,12 +68,33 @@ public class SavingGoalService {
 		SavingGoal goal = requireOwnedGoal(id);
 		savingGoalRepository.delete(goal);
 	}
+	
+	@Transactional
+	public void updateProgressFromTransaction(Transaction tx) {
+	    if (tx.getType() != TransactionType.SAVING || tx.getSavingGoal() == null) return;
+
+	    SavingGoal goal = savingGoalRepository.findById(tx.getSavingGoal().getId()).orElse(null);
+	    if (goal == null) return;
+
+	    BigDecimal current = goal.getCurrentAmount() == null ? BigDecimal.ZERO : goal.getCurrentAmount();
+	    BigDecimal updated = current.add(tx.getAmount());
+	    goal.setCurrentAmount(updated);
+
+	    if (goal.getTargetAmount() != null &&
+	        updated.compareTo(goal.getTargetAmount()) >= 0) {
+	        goal.setStatus(SavingGoalStatus.ACHIEVED);
+	    }
+
+	    savingGoalRepository.save(goal);
+	}
+
 	 // ===== helpers =====
-    private SavingGoal requireOwnedGoal(Long id) {
+    public SavingGoal requireOwnedGoal(Long id) {
         User me = SecurityUtils.getCurrentUser();
         return savingGoalRepository.findByIdAndUserId(id, me.getId())
                 .orElseThrow(() -> new RuntimeException("Saving goal not found or not yours"));
     }
+    
 	
 	
 }

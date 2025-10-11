@@ -20,4 +20,6 @@ public class TransactionRequest {
 
     // chỉ cần categoryId, user lấy từ SecurityUtils
     private Long userCategoryId;
+    
+    private Long savingGoalId;
 }
