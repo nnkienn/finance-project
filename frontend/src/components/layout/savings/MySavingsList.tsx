@@ -23,7 +23,6 @@ export default function MySavingsList({
     <div className="bg-white rounded-2xl shadow p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-800">My Savings</h2>
-        <button className="text-sm text-blue-500 hover:underline">View all</button>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -34,7 +33,7 @@ export default function MySavingsList({
               <Link href={`/savings/${item.id}`} className="flex-1">
                 <div className="flex justify-between text-sm text-gray-700">
                   <span className="font-medium">{item.label}</span>
-                  <span className="font-semibold text-gray-900">${item.saved} / ${item.target}</span>
+                  <span className="font-semibold text-gray-900">{item.saved}/ {item.target}</span>
                 </div>
 
                 <div className="w-full h-2 bg-gray-100 rounded-full mt-2 overflow-hidden">
