@@ -10,9 +10,8 @@ export function middleware(req: NextRequest) {
   const isProtected =
     pathname.startsWith("/homepage") ||
     pathname.startsWith("/category") ||
-    pathname.startsWith("/my-categories") ||
     pathname.startsWith("/transaction") ||
-    pathname.startsWith("/saving") ||
+    pathname.startsWith("/savings") ||
     pathname.startsWith("/profile");
 
   // chưa login mà vào protected route
@@ -38,9 +37,8 @@ export const config = {
     "/signup",
     "/homepage/:path*",
     "/category/:path*",
-    "/my-categories/:path*",
     "/transaction/:path*",
-    "/saving/:path*",
+    "/savings/:path*",
     "/profile/:path*",
   ],
 };

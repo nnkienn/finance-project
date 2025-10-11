@@ -17,7 +17,6 @@ import com.finance.saving.dto.SavingGoalRequest;
 import com.finance.saving.dto.SavingGoalResponse;
 import com.finance.saving.dto.SavingGoalUpdateRequest;
 import com.finance.saving.dto.SavingHistoryDto;
-import com.finance.saving.entity.SavingHistory;
 import com.finance.saving.repository.SavingHistoryRepository;
 import com.finance.saving.service.SavingGoalService;
 

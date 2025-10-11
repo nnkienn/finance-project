@@ -52,7 +52,7 @@ export default function NavbarPrivate() {
       id: "saving",
       label: "Saving",
       icon: <PiggyBank size={16} />, // 🐷 icon heo đất tiết kiệm
-      link: "/saving",
+      link: "/savings",
     },
     {
       id: "activity",
