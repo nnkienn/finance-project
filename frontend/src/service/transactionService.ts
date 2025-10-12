@@ -6,14 +6,17 @@ import { Transaction } from "@/type/transaction";
 const API_URL = "/api/transactions";
 
 // ---------- Types ----------
+// TransactionPayload: allow either userCategoryId or savingGoalId (both optional)
 export interface TransactionPayload {
   amount: number;
   type: TransactionType;              // "EXPENSE" | "INCOME" | "SAVING"
-  paymentMethod: string;              // hoặc enum riêng nếu bạn có
+  paymentMethod?: string;             // optional, backend will default if needed
   note: string;
   transactionDate: string;            // ISO: "2025-10-08T09:00:00"
-  userCategoryId: number;
+  userCategoryId?: number | null;
+  savingGoalId?: number | null;
 }
+
 
 export interface PagedResponse<T> {
   content: T[];

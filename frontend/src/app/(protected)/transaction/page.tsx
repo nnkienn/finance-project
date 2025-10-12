@@ -18,14 +18,29 @@ import {
   fetchTransactionsPaged,
 } from "@/store/slice/transactionSlice";
 import { fetchUserCategories } from "@/store/slice/userCategorySlice";
+
+// saving slice
+import { fetchSavings } from "@/store/slice/savingSlice";
+
 import { Transaction } from "@/type/transaction";
 import { transactionExportService } from "@/service/transactionExportService";
 
 export default function Homepage() {
   const dispatch = useAppDispatch();
-  const { items: transactions, loading, error, page, totalPages, size } =
-    useAppSelector((state) => state.transactions);
+
+  const {
+    items: transactions,
+    loading,
+    error,
+    page,
+    totalPages,
+    size,
+  } = useAppSelector((state) => state.transactions);
+
   const { items: categories } = useAppSelector((state) => state.userCategories);
+
+  // get savings from saving slice
+  const savings = useAppSelector((state) => state.saving.items);
 
   const [showModal, setShowModal] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
@@ -44,9 +59,10 @@ export default function Homepage() {
   });
 
   useEffect(() => {
+    // load categories + savings + first page of transactions
     dispatch(fetchUserCategories());
+    dispatch(fetchSavings());
 
-    // load lần đầu trang 0
     dispatch(
       fetchTransactionsPaged({
         page: 0,
@@ -56,37 +72,34 @@ export default function Homepage() {
     );
   }, [dispatch, size]);
 
+  const handleExport = async (type: "csv" | "pdf") => {
+    try {
+      const blob =
+        type === "csv"
+          ? await transactionExportService.exportCsv()
+          : await transactionExportService.exportPdf();
 
-const handleExport = async (type: "csv" | "pdf") => {
-  try {
-    const blob =
-      type === "csv"
-        ? await transactionExportService.exportCsv()
-        : await transactionExportService.exportPdf();
-
-    // Tạo link tải file
-    const url = window.URL.createObjectURL(new Blob([blob]));
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `transactions.${type}`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  } catch (err) {
-    console.error("Export failed", err);
-    alert("❌ Export failed. Check console for details.");
-  }
-};
+      // Tạo link tải file
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `transactions.${type}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed", err);
+      alert("❌ Export failed. Check console for details.");
+    }
+  };
 
   const handleSave = async (payload: Omit<Transaction, "id">) => {
     try {
       if (editTx) {
-        await dispatch(
-          updateTransaction({ id: editTx.id!, data: payload })
-        ).unwrap();
+        await dispatch(updateTransaction({ id: editTx.id!, data: payload })).unwrap();
         alert("✅ Transaction updated successfully!");
       } else {
-        await dispatch(createTransaction(payload)).unwrap();
+        await dispatch(createTransaction(payload as any)).unwrap();
         alert("✅ Transaction created successfully!");
       }
       setShowModal(false);
@@ -171,10 +184,7 @@ const handleExport = async (type: "csv" | "pdf") => {
             {/* Filter */}
             <div className="bg-white rounded-2xl shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Search & Filter</h2>
-              <TransactionSearchFilter
-                categories={categories}
-                onApply={handleFilter}
-              />
+              <TransactionSearchFilter categories={categories} onApply={handleFilter} />
             </div>
 
             {/* Transaction Section */}
@@ -244,6 +254,7 @@ const handleExport = async (type: "csv" | "pdf") => {
         onSave={handleSave}
         initialData={editTx}
         categories={categories}
+        savings={savings} // <-- truyền danh sách saving goals vào modal
       />
     </div>
   );

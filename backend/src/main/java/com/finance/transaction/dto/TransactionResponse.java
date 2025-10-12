@@ -24,6 +24,10 @@ public class TransactionResponse {
     private String categoryName;
     private String categoryIcon;
 
-    // NEW: nếu giao dịch sinh từ recurring occurrence, trả id để UI hiển thị nguồn
+ // TransactionResponse.java (add fields)
+    private Long savingGoalId;
+    private String savingGoalName;
+
+    
     private Long recurringOccurrenceId;
 }

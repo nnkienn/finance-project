@@ -104,9 +104,40 @@ public class SavingGoalService {
 	 // ===== helpers =====
     public SavingGoal requireOwnedGoal(Long id) {
         User me = SecurityUtils.getCurrentUser();
+        System.out.println("Saving goal" + id);
         return savingGoalRepository.findByIdAndUserId(id, me.getId())
                 .orElseThrow(() -> new RuntimeException("Saving goal not found or not yours"));
     }
+    @Transactional
+    public void adjustAmountForUpdate(SavingGoal goal, java.math.BigDecimal delta, String action) {
+        SavingGoal g = savingGoalRepository.findById(goal.getId()).orElseThrow(() -> new RuntimeException("Saving goal not found"));
+        java.math.BigDecimal cur = g.getCurrentAmount() == null ? java.math.BigDecimal.ZERO : g.getCurrentAmount();
+        java.math.BigDecimal updated = cur.add(delta);
+        if (updated.compareTo(java.math.BigDecimal.ZERO) < 0) {
+            updated = java.math.BigDecimal.ZERO; // đảm bảo không âm
+        }
+
+        g.setCurrentAmount(updated);
+
+        // cập nhật trạng thái
+        if (g.getTargetAmount() != null && updated.compareTo(g.getTargetAmount()) >= 0) {
+            g.setStatus(SavingGoalStatus.ACHIEVED);
+        } else {
+            g.setStatus(SavingGoalStatus.IN_PROGRESS);
+        }
+
+        savingGoalRepository.save(g);
+
+        SavingHistory history = SavingHistory.builder()
+                .savingGoal(g)
+                .user(g.getUser())
+                .action(action)
+                .amount(delta) // delta có thể âm (rollback)
+                .totalAfter(updated)
+                .build();
+        savingHistoryRepository.save(history);
+    }
+
     
 	
 	

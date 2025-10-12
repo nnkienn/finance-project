@@ -43,8 +43,10 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_category_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_category_id")
     private UserCategory userCategory;
+
 
     /** Back-ref: giao dịch này được tạo từ occurrence nào (nếu có) */
     @OneToOne(mappedBy = "postedTransaction", fetch = FetchType.LAZY)
