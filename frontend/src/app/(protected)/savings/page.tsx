@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
-import RightSidebar from "@/components/layout/transaction/TransactionRightSidebar";
+import RightSidebar from "@/components/layout/savings/analystic/SavingRightSidebar";
 import AddSavingModel from "@/components/layout/savings/AddSavingModel";
 import EditSavingModal from "@/components/layout/savings/EditSavingModal";
 import MySavingsList from "@/components/layout/savings/MySavingsList";
+import SavingSummaryGrid from "@/components/layout/savings/SavingSummaryGrid";
 
 import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";
@@ -18,6 +19,12 @@ import {
   selectAllSavings,
   selectSavingLoading,
 } from "@/store/slice/savingSlice";
+import {
+  fetchSavingSummary,
+  fetchSavingProgress,
+  selectSavingSummary,
+  selectSavingProgress,
+} from "@/store/slice/savingAnalyticsSlice";
 import { SavingGoalResponse } from "@/service/savingService";
 
 // =======================
@@ -29,39 +36,57 @@ type SavingItem = {
   target: number;
   saved: number;
   color: string;
+  progress?: number;
   startDate?: string | null;
   endDate?: string | null;
   description?: string | null;
 };
 
-// helper palette
+// =======================
+// Helper
+// =======================
 const PALETTE = ["#ec4899", "#f472b6", "#e879f9", "#db2777", "#f9a8d4", "#fb7185", "#ff7ab6"];
 const pickColor = (id: number) => PALETTE[id % PALETTE.length];
 
+// =======================
+// Component
+// =======================
 export default function SavingsPage() {
   const dispatch = useAppDispatch();
   const remoteSavings = useAppSelector(selectAllSavings);
   const loading = useAppSelector(selectSavingLoading);
+  const summary = useAppSelector(selectSavingSummary);
+  const progressList = useAppSelector(selectSavingProgress);
 
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<SavingGoalResponse | null>(null);
 
+  // Initial fetch
   useEffect(() => {
     dispatch(fetchSavings());
+    dispatch(fetchSavingSummary());
+    dispatch(fetchSavingProgress());
   }, [dispatch]);
 
-  // map backend shape -> UI shape
-  const items: SavingItem[] = (remoteSavings || []).map((s: any) => ({
-    id: Number(s.id),
-    label: s.name ?? "Untitled",
-    target: Number(s.targetAmount ?? 0),
-    saved: Number(s.currentAmount ?? 0),
-    color: s.color ?? pickColor(Number(s.id ?? 0)),
-    startDate: s.startDate ?? null,
-    endDate: s.endDate ?? null,
-    description: s.description ?? null,
-  }));
+  // Map backend → UI model
+  const items: SavingItem[] = (remoteSavings || []).map((s: any) => {
+    const p = progressList.find((x) => x.id === s.id);
+    return {
+      id: Number(s.id),
+      label: s.name ?? "Untitled",
+      target: Number(s.targetAmount ?? 0),
+      saved: Number(s.currentAmount ?? 0),
+      color: s.color ?? pickColor(Number(s.id ?? 0)),
+      progress: p?.progress ?? 0,
+      startDate: s.startDate ?? null,
+      endDate: s.endDate ?? null,
+      description: s.description ?? null,
+    };
+  });
 
+  // =======================
+  // Handlers
+  // =======================
   const openCreate = () => {
     setEditing(null);
     setShowCreate(true);
@@ -77,6 +102,8 @@ export default function SavingsPage() {
     try {
       await dispatch(deleteSaving(id)).unwrap();
       alert("✅ Deleted.");
+      dispatch(fetchSavingSummary());
+      dispatch(fetchSavingProgress());
     } catch (err: any) {
       console.error("Delete saving failed:", err);
       alert("❌ Delete failed: " + (err?.message ?? "Unknown"));
@@ -95,6 +122,8 @@ export default function SavingsPage() {
       await dispatch(createSaving(body)).unwrap();
       alert("✅ Saving created.");
       setShowCreate(false);
+      dispatch(fetchSavingSummary());
+      dispatch(fetchSavingProgress());
     } catch (err: any) {
       console.error("Create failed:", err);
       alert("❌ Failed: " + (err?.message ?? "Unknown"));
@@ -113,12 +142,17 @@ export default function SavingsPage() {
       await dispatch(updateSaving({ id: data.id, data: body })).unwrap();
       alert("✅ Saving updated.");
       setEditing(null);
+      dispatch(fetchSavingSummary());
+      dispatch(fetchSavingProgress());
     } catch (err: any) {
       console.error("Update failed:", err);
       alert("❌ Failed: " + (err?.message ?? "Unknown"));
     }
   };
 
+  // =======================
+  // Render
+  // =======================
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <NavbarPrivate />
@@ -143,6 +177,15 @@ export default function SavingsPage() {
 
           {/* CENTER */}
           <div className="col-span-12 md:col-span-6 space-y-6">
+            {/* === 4 SUMMARY CARDS === */}
+            <SavingSummaryGrid
+              totalSaved={summary?.totalSaved}
+              totalGoals={summary?.totalGoals}
+              achieved={summary?.achieved}
+              active={summary?.active}
+            />
+
+            {/* === SAVING GOALS HEADER === */}
             <div className="bg-white rounded-2xl shadow p-6 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold">Saving Goals</h2>
@@ -156,8 +199,11 @@ export default function SavingsPage() {
               </button>
             </div>
 
+            {/* === SAVINGS LIST === */}
             {loading === "loading" ? (
-              <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-500">Loading savings...</div>
+              <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-500">
+                Loading savings...
+              </div>
             ) : (
               <MySavingsList items={items} onEdit={handleEdit} onDelete={handleDelete} />
             )}

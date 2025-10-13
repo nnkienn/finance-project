@@ -1,6 +1,8 @@
 package com.finance.saving.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,9 +48,18 @@ public class SavingReportService {
         User user = SecurityUtils.getCurrentUser();
         List<SavingGoal> goals = savingGoalRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
 
+        // Lấy top 3 goal có tiến độ cao nhất (tính theo currentAmount / targetAmount)
         return goals.stream()
-                .filter(g -> g.getStatus() == SavingGoalStatus.ACHIEVED && g.getStartDate() != null && g.getEndDate() != null)
-                .sorted(Comparator.comparingLong(g -> java.time.temporal.ChronoUnit.DAYS.between(g.getStartDate(), g.getEndDate())))
+                .filter(g -> g.getTargetAmount() != null && g.getTargetAmount().compareTo(BigDecimal.ZERO) > 0)
+                .sorted((g1, g2) -> {
+                    double p1 = g1.getCurrentAmount()
+                            .divide(g1.getTargetAmount(), 4, RoundingMode.HALF_UP)
+                            .doubleValue();
+                    double p2 = g2.getCurrentAmount()
+                            .divide(g2.getTargetAmount(), 4, RoundingMode.HALF_UP)
+                            .doubleValue();
+                    return Double.compare(p2, p1); // Descending (cao nhất trước)
+                })
                 .limit(3)
                 .map(g -> new SavingGoalSummaryDto(
                         g.getId(),
@@ -61,6 +72,7 @@ public class SavingReportService {
                 ))
                 .toList();
     }
+
 
     /**
      * 3️⃣ Goals bị hủy hoặc chưa đạt

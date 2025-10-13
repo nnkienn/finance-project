@@ -6,8 +6,8 @@ import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
 import RightSidebar from "@/components/layout/transaction/TransactionRightSidebar";
 import AddSavingModel from "@/components/layout/savings/AddSavingModel";
-import ContributeModal from "@/components/layout/savings/ContributeModal";
-import TransactionSavingList, { Deposit } from "@/components/layout/savings/TransactionSavingList";
+import ContributeModal from "@/components/layout/savings/id/ContributeModal";
+import TransactionSavingList, { Deposit } from "@/components/layout/savings/id/TransactionSavingList";
 
 import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";

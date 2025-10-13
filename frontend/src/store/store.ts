@@ -4,7 +4,8 @@ import masterCategoryReducer from "./slice/masterCategorySlice"; // 👈 thêm s
 import userCategoryReducer from "./slice/userCategorySlice"; // 👈 thêm slice mới
 import transactionReducer from "./slice/transactionSlice";
 import savingReducer from "./slice/savingSlice"; // 👈 thêm slice mới
-
+import savingAnalyticsReducer from "./slice/savingAnalyticsSlice";
+import savingReportReducer from "./slice/savingReportSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -12,6 +13,8 @@ export const store = configureStore({
     userCategories: userCategoryReducer,
     transactions: transactionReducer,
     saving: savingReducer,
+    savingAnalytics: savingAnalyticsReducer,
+    savingReport: savingReportReducer,
 
   },
 });

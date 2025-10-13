@@ -8,6 +8,7 @@ type Item = {
   target: number;
   saved: number;
   color: string;
+  progress?: number; // ✅ thêm field progress
 };
 
 export default function MySavingsList({
@@ -27,18 +28,26 @@ export default function MySavingsList({
 
       <div className="flex flex-col gap-4">
         {items.map((item) => {
-          const progress = item.target > 0 ? Math.round((item.saved / item.target) * 100) : 0;
+          const progress = item.progress ?? (item.target > 0 ? Math.round((item.saved / item.target) * 100) : 0);
+
           return (
             <div key={item.id} className="flex items-center justify-between gap-4">
               <Link href={`/savings/${item.id}`} className="flex-1">
                 <div className="flex justify-between text-sm text-gray-700">
                   <span className="font-medium">{item.label}</span>
-                  <span className="font-semibold text-gray-900">{item.saved}/ {item.target}</span>
+                  <span className="font-semibold text-gray-900">
+                    {item.saved.toLocaleString()} / {item.target.toLocaleString()}
+                  </span>
                 </div>
 
                 <div className="w-full h-2 bg-gray-100 rounded-full mt-2 overflow-hidden">
-                  <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: item.color }} />
+                  <div
+                    className="h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%`, backgroundColor: item.color }}
+                  />
                 </div>
+
+                <p className="text-xs text-gray-500 mt-1">{progress.toFixed(1)}% completed</p>
               </Link>
 
               <div className="flex items-center gap-2 ml-4">
