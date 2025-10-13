@@ -1,12 +1,11 @@
-// src/app/savings/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import CardInfo from "@/components/layout/dashboard/CardInfo";
 import RightSidebar from "@/components/layout/transaction/TransactionRightSidebar";
 import AddSavingModel from "@/components/layout/savings/AddSavingModel";
+import EditSavingModal from "@/components/layout/savings/EditSavingModal";
 import MySavingsList from "@/components/layout/savings/MySavingsList";
 
 import { useAppDispatch } from "@/hook/useAppDispatch";
@@ -19,56 +18,58 @@ import {
   selectAllSavings,
   selectSavingLoading,
 } from "@/store/slice/savingSlice";
+import { SavingGoalResponse } from "@/service/savingService";
 
+// =======================
+// UI Type
+// =======================
 type SavingItem = {
   id: number;
   label: string;
-  target: number; // targetAmount
-  saved: number; // current saved amount
+  target: number;
+  saved: number;
   color: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  description?: string | null;
 };
 
-// helper palette deterministic by id
+// helper palette
 const PALETTE = ["#ec4899", "#f472b6", "#e879f9", "#db2777", "#f9a8d4", "#fb7185", "#ff7ab6"];
 const pickColor = (id: number) => PALETTE[id % PALETTE.length];
 
-export default function Homepage() {
+export default function SavingsPage() {
   const dispatch = useAppDispatch();
   const remoteSavings = useAppSelector(selectAllSavings);
   const loading = useAppSelector(selectSavingLoading);
 
-  const [showModal, setShowModal] = useState(false);
-  const [editData, setEditData] = useState<any | null>(null);
-
-  // Map backend shape -> UI shape
-  const items: SavingItem[] = (remoteSavings || []).map((s: any) => ({
-    id: Number(s.id),
-    label: String(s.name ?? s.label ?? "Untitled"),
-    target: Number(s.targetAmount ?? s.target ?? 0),
-    saved: Number(s.currentAmount ?? s.saved ?? 0),
-    color: s.color ?? pickColor(Number(s.id ?? 0)),
-  }));
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<SavingGoalResponse | null>(null);
 
   useEffect(() => {
     dispatch(fetchSavings());
   }, [dispatch]);
 
+  // map backend shape -> UI shape
+  const items: SavingItem[] = (remoteSavings || []).map((s: any) => ({
+    id: Number(s.id),
+    label: s.name ?? "Untitled",
+    target: Number(s.targetAmount ?? 0),
+    saved: Number(s.currentAmount ?? 0),
+    color: s.color ?? pickColor(Number(s.id ?? 0)),
+    startDate: s.startDate ?? null,
+    endDate: s.endDate ?? null,
+    description: s.description ?? null,
+  }));
+
   const openCreate = () => {
-    setEditData(null);
-    setShowModal(true);
+    setEditing(null);
+    setShowCreate(true);
   };
 
   const handleEdit = (item: SavingItem) => {
-    // prepare initialData for AddSavingModel (fields used earlier)
-    setEditData({
-      id: item.id,
-      name: item.label,
-      targetAmount: String(item.target),
-      startDate: null,
-      endDate: null,
-      description: "",
-    });
-    setShowModal(true);
+    const found = remoteSavings.find((s) => s.id === item.id);
+    if (found) setEditing(found);
   };
 
   const handleDelete = async (id: number) => {
@@ -82,8 +83,7 @@ export default function Homepage() {
     }
   };
 
-  const handleSave = async (payload: any) => {
-    // payload shape from AddSavingModel: { id?, name, targetAmount, startDate, endDate, description }
+  const handleSaveCreate = async (payload: any) => {
     const body = {
       name: payload.name,
       targetAmount: Number(payload.targetAmount),
@@ -91,22 +91,31 @@ export default function Homepage() {
       endDate: payload.endDate || null,
       description: payload.description || null,
     };
-
     try {
-      if (payload.id) {
-        // update
-        await dispatch(updateSaving({ id: payload.id, data: body })).unwrap();
-        alert("✅ Saving updated.");
-      } else {
-        // create
-        await dispatch(createSaving(body)).unwrap();
-        alert("✅ Saving created.");
-      }
-      setShowModal(false);
+      await dispatch(createSaving(body)).unwrap();
+      alert("✅ Saving created.");
+      setShowCreate(false);
     } catch (err: any) {
-      console.error("Save failed:", err);
-      const msg = err?.message || (err?.payload ?? "Unknown error");
-      alert("❌ Failed to save: " + msg);
+      console.error("Create failed:", err);
+      alert("❌ Failed: " + (err?.message ?? "Unknown"));
+    }
+  };
+
+  const handleSaveEdit = async (data: any) => {
+    const body = {
+      name: data.name,
+      targetAmount: Number(data.targetAmount),
+      startDate: data.startDate ?? editing?.startDate ?? null,
+      endDate: data.endDate ?? editing?.endDate ?? null,
+      description: data.description ?? editing?.description ?? null,
+    };
+    try {
+      await dispatch(updateSaving({ id: data.id, data: body })).unwrap();
+      alert("✅ Saving updated.");
+      setEditing(null);
+    } catch (err: any) {
+      console.error("Update failed:", err);
+      alert("❌ Failed: " + (err?.message ?? "Unknown"));
     }
   };
 
@@ -134,29 +143,24 @@ export default function Homepage() {
 
           {/* CENTER */}
           <div className="col-span-12 md:col-span-6 space-y-6">
-            <div className="bg-white rounded-2xl shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Saving List</h2>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={openCreate}
-                    className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-medium hover:bg-pink-600 transition"
-                  >
-                    + Create Saving
-                  </button>
-                </div>
+            <div className="bg-white rounded-2xl shadow p-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Saving Goals</h2>
+                <p className="text-sm text-gray-500">Manage your saving goals.</p>
               </div>
-
-              <p className="text-sm text-gray-500">Manage your saving goals below.</p>
+              <button
+                onClick={openCreate}
+                className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-medium hover:bg-pink-600 transition"
+              >
+                + Create
+              </button>
             </div>
 
-            <div>
-              {loading === "loading" && (
-                <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-500">Loading savings...</div>
-              )}
-
+            {loading === "loading" ? (
+              <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-500">Loading savings...</div>
+            ) : (
               <MySavingsList items={items} onEdit={handleEdit} onDelete={handleDelete} />
-            </div>
+            )}
           </div>
 
           {/* RIGHT */}
@@ -166,7 +170,24 @@ export default function Homepage() {
         </div>
       </main>
 
-      <AddSavingModel isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} initialData={editData} />
+      {/* --- MODALS --- */}
+      {showCreate && (
+        <AddSavingModel
+          isOpen={showCreate}
+          onClose={() => setShowCreate(false)}
+          onSave={handleSaveCreate}
+          initialData={null}
+        />
+      )}
+
+      {editing && (
+        <EditSavingModal
+          isOpen={!!editing}
+          onClose={() => setEditing(null)}
+          saving={editing}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 }
