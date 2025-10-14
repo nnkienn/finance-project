@@ -1,4 +1,3 @@
-// src/main/java/com/finance/transaction/service/TransactionService.java
 package com.finance.transaction.service;
 
 import java.math.BigDecimal;
@@ -47,24 +46,25 @@ public class TransactionService implements RecurringPostingPort {
     private final TransactionEventPublisher transactionEventPublisher;
     private final SavingGoalService savingGoalService;
 
-    // ================== CRUD ==================
+    // ================== CREATE ==================
 
+    /**
+     * Tạo transaction mới — đồng thời publish Kafka event (transaction.created)
+     */
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
         User user = SecurityUtils.getCurrentUser();
-        if (request.getType() == TransactionType.SAVING) {
-            if (request.getSavingGoalId() == null) {
-                throw new RuntimeException("savingGoalId is required for SAVING transactions");
-            }
+
+        if (request.getType() == TransactionType.SAVING && request.getSavingGoalId() == null) {
+            throw new RuntimeException("savingGoalId is required for SAVING transactions");
         }
-        
+
         UserCategory userCategory = null;
-        if (request.getType() != TransactionType.SAVING) {
-            // only resolve category for non-saving types (optional rule)
+        if (request.getType() != TransactionType.SAVING && request.getUserCategoryId() != null) {
             userCategory = userCategoryRepository
                 .findByIdAndUserId(request.getUserCategoryId(), user.getId())
-                .orElseThrow(() -> new RuntimeException(
-                    "UserCategory không thuộc user (id=" + request.getUserCategoryId() + ")"));
+                .orElseThrow(() ->
+                    new RuntimeException("UserCategory không thuộc user (id=" + request.getUserCategoryId() + ")"));
         }
 
         Transaction tx = new Transaction();
@@ -75,26 +75,41 @@ public class TransactionService implements RecurringPostingPort {
         tx.setTransactionDate(request.getTransactionDate() != null ? request.getTransactionDate() : LocalDateTime.now());
         tx.setUser(user);
         if (userCategory != null) tx.setUserCategory(userCategory);
-        if(tx.getType() == TransactionType.SAVING && request.getSavingGoalId() !=null) {
-        	SavingGoal goal = savingGoalService.requireOwnedGoal(request.getSavingGoalId());
-        	tx.setSavingGoal(goal);
+
+        // Nếu là SAVING -> liên kết goal
+        if (tx.getType() == TransactionType.SAVING && request.getSavingGoalId() != null) {
+            SavingGoal goal = savingGoalService.requireOwnedGoal(request.getSavingGoalId());
+            tx.setSavingGoal(goal);
         }
-        
-        
+
+        // Lưu DB
         tx = transactionRepository.save(tx);
-        
+
+        // Nếu là giao dịch tiết kiệm, cập nhật tiến độ goal
         if (tx.getType() == TransactionType.SAVING) {
             savingGoalService.updateProgressFromTransaction(tx);
         }
 
-
-        transactionEventPublisher.publish(new TransactionEventDTO(
-            tx.getId(), user.getId(), tx.getAmount(),
-            tx.getType().name(), tx.getPaymentMethod().name(), tx.getTransactionDate()
-        ));
+        // 📨 Gửi event qua Kafka (transaction.created)
+        try {
+            TransactionEventDTO event = new TransactionEventDTO(
+                    tx.getId(),
+                    user.getId(),
+                    tx.getAmount(),
+                    tx.getType().name(),
+                    tx.getPaymentMethod().name(),
+                    tx.getTransactionDate()
+            );
+            transactionEventPublisher.publish(event);
+        } catch (Exception e) {
+            System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
+            // Không throw để không rollback DB nếu Kafka lỗi
+        }
 
         return TransactionMapper.toResponse(tx);
     }
+
+    // ================== READ ==================
 
     @Transactional(readOnly = true)
     public TransactionResponse getTransactionById(Long id) {
@@ -111,6 +126,7 @@ public class TransactionService implements RecurringPostingPort {
             .toList();
     }
 
+    // ================== UPDATE ==================
     @Transactional
     public TransactionResponse updateTransaction(Long id, TransactionRequest request) {
         User user = SecurityUtils.getCurrentUser();
@@ -118,98 +134,40 @@ public class TransactionService implements RecurringPostingPort {
         Transaction tx = transactionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Transaction not found with id " + id));
 
-        // Lưu trạng thái cũ để xử lý rollback/adjust
         TransactionType oldType = tx.getType();
-        java.math.BigDecimal oldAmount = tx.getAmount();
+        BigDecimal oldAmount = tx.getAmount();
         SavingGoal oldGoal = tx.getSavingGoal();
 
-        // --- Update category nếu thay đổi (nếu vẫn dùng) ---
-        if (request.getUserCategoryId() != null) {
-            if (tx.getUserCategory() == null || !request.getUserCategoryId().equals(tx.getUserCategory().getId())) {
-                UserCategory newCat = userCategoryRepository
-                    .findByIdAndUserId(request.getUserCategoryId(), user.getId())
-                    .orElseThrow(() -> new RuntimeException(
-                        "UserCategory không thuộc user (id=" + request.getUserCategoryId() + ")"));
-                tx.setUserCategory(newCat);
-            }
-        }
-
-        // --- Apply basic fields ---
+        // Cập nhật cơ bản
         tx.setAmount(request.getAmount());
         tx.setType(request.getType());
         tx.setPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : tx.getPaymentMethod());
         tx.setNote(request.getNote());
         tx.setTransactionDate(request.getTransactionDate() != null ? request.getTransactionDate() : tx.getTransactionDate());
 
-        // --- Handle saving logic (4 cases) ---
-        TransactionType newType = request.getType();
-        java.math.BigDecimal newAmount = request.getAmount() == null ? java.math.BigDecimal.ZERO : request.getAmount();
+        // Cập nhật goal logic (4 case)
+        savingGoalService.handleTransactionGoalUpdate(user, tx, oldType, oldGoal, oldAmount, request);
 
-        if (oldType == TransactionType.SAVING && newType == TransactionType.SAVING) {
-            // SAVING -> SAVING (maybe same goal or moved to another goal or amount changed)
-            Long newGoalId = request.getSavingGoalId();
-            if (newGoalId == null) {
-                throw new RuntimeException("savingGoalId is required for SAVING transactions");
-            }
-            SavingGoal newGoal = savingGoalService.requireOwnedGoal(newGoalId);
-
-            if (oldGoal != null && !oldGoal.getId().equals(newGoal.getId())) {
-                // moved from oldGoal -> newGoal: subtract old amount from oldGoal, add new amount to newGoal
-                savingGoalService.adjustAmountForUpdate(oldGoal, oldAmount.negate(), "Revert due to transaction update");
-                savingGoalService.adjustAmountForUpdate(newGoal, newAmount, "Deposit due to transaction update");
-            } else {
-                // same goal: apply diff
-                java.math.BigDecimal diff = newAmount.subtract(oldAmount);
-                if (diff.signum() != 0) {
-                    savingGoalService.adjustAmountForUpdate(newGoal, diff, "Adjust due to transaction update");
-                }
-            }
-            tx.setSavingGoal(newGoal);
-        } else if (oldType == TransactionType.SAVING && newType != TransactionType.SAVING) {
-            // SAVING -> NON-SAVING: remove old amount from the old goal
-            if (oldGoal != null) {
-                savingGoalService.adjustAmountForUpdate(oldGoal, oldAmount.negate(), "Revert due to transaction update (to non-saving)");
-            }
-            tx.setSavingGoal(null);
-
-            // ensure category exists for non-saving types (optional)
-            if (request.getUserCategoryId() != null) {
-                UserCategory newCat = userCategoryRepository
-                    .findByIdAndUserId(request.getUserCategoryId(), user.getId())
-                    .orElseThrow(() -> new RuntimeException("UserCategory không thuộc user (id=" + request.getUserCategoryId() + ")"));
-                tx.setUserCategory(newCat);
-            }
-        } else if (oldType != TransactionType.SAVING && newType == TransactionType.SAVING) {
-            // NON-SAVING -> SAVING: add new amount to the new goal
-            Long newGoalId = request.getSavingGoalId();
-            if (newGoalId == null) {
-                throw new RuntimeException("savingGoalId is required for SAVING transactions");
-            }
-            SavingGoal newGoal = savingGoalService.requireOwnedGoal(newGoalId);
-            savingGoalService.adjustAmountForUpdate(newGoal, newAmount, "Deposit due to transaction update (to saving)");
-            tx.setSavingGoal(newGoal);
-        } else {
-            // NON-SAVING -> NON-SAVING: nothing to do with saving goals
-            tx.setSavingGoal(null);
-        }
-
+        
         tx = transactionRepository.save(tx);
         return TransactionMapper.toResponse(tx);
     }
 
-
+    // ================== DELETE ==================
     @Transactional
     public void deleteTransaction(Long id) {
         Transaction tx = transactionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Transaction not found with id " + id));
 
         if (tx.getType() == TransactionType.SAVING && tx.getSavingGoal() != null) {
-            // subtract this tx.amount from goal
             savingGoalService.adjustAmountForUpdate(tx.getSavingGoal(), tx.getAmount().negate(), "Revert due to transaction delete");
         }
 
         transactionRepository.deleteById(id);
     }
+
+    // ================== FILTER & ANALYTICS ==================
+    // (giữ nguyên toàn bộ các hàm KPI, Breakdown, Timeseries của bạn)
 
 
     // ================== FILTER & ANALYTICS ==================

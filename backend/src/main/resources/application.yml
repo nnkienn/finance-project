@@ -13,7 +13,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update     # ⚠️ Dev: auto-update schema, Prod thì nên để "validate"
+      ddl-auto: update        # Dev: tự update schema. Prod thì dùng validate
     show-sql: true
     properties:
       hibernate:
@@ -21,15 +21,21 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   kafka:
-    bootstrap-servers: localhost:9092   # ⚙️ Kafka local container hoặc external broker
+    bootstrap-servers: host.docker.internal:9092
     consumer:
       group-id: finance-app
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 5
+      enable-idempotence: true
+      linger-ms: 5
 
 server:
   port: 8080
@@ -39,16 +45,16 @@ server:
 
 logging:
   level:
-    org.springframework.security: DEBUG
-    org.springframework.security.web.FilterChainProxy: DEBUG
-    org.springframework.security.web.access: DEBUG
-    org.springframework.security.web.access.intercept: TRACE
-    org.springframework.web: DEBUG
+    org.springframework.security: WARN
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.springframework.kafka.listener: INFO    # Log consumer startup
+    org.springframework.kafka: INFO
 
 app:
   jwt:
     base64-secret: Lx28C1P6FJvJZp3SkX5y2y4j3KX3iU7+M7XAZmUjB6c=
-    access-token-validity-seconds: 900         # 15 phút
-    refresh-token-validity-seconds: 604800     # 7 ngày
+    access-token-validity-seconds: 900           # 15 phút
+    refresh-token-validity-seconds: 604800       # 7 ngày
   verification:
-    expire-minutes: 60                         # thời hạn xác minh email
+    expire-minutes: 60                           # Thời hạn xác minh email

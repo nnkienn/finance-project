@@ -137,6 +137,63 @@ public class SavingGoalService {
                 .build();
         savingHistoryRepository.save(history);
     }
+    
+    @Transactional
+    public void handleTransactionGoalUpdate(
+            User user,
+            Transaction tx,
+            TransactionType oldType,
+            SavingGoal oldGoal,
+            BigDecimal oldAmount,
+            com.finance.transaction.dto.TransactionRequest request
+    ) {
+        TransactionType newType = request.getType();
+        BigDecimal newAmount = request.getAmount() == null ? BigDecimal.ZERO : request.getAmount();
+
+        if (oldType == TransactionType.SAVING && newType == TransactionType.SAVING) {
+            // SAVING -> SAVING (cùng goal hoặc đổi goal)
+            Long newGoalId = request.getSavingGoalId();
+            if (newGoalId == null) {
+                throw new RuntimeException("savingGoalId is required for SAVING transactions");
+            }
+            SavingGoal newGoal = requireOwnedGoal(newGoalId);
+
+            if (oldGoal != null && !oldGoal.getId().equals(newGoal.getId())) {
+                // chuyển sang goal mới: trừ goal cũ, cộng goal mới
+                adjustAmountForUpdate(oldGoal, oldAmount.negate(), "Revert due to transaction update");
+                adjustAmountForUpdate(newGoal, newAmount, "Deposit due to transaction update");
+            } else {
+                // cùng goal: chỉ điều chỉnh phần chênh lệch
+                BigDecimal diff = newAmount.subtract(oldAmount);
+                if (diff.signum() != 0) {
+                    adjustAmountForUpdate(newGoal, diff, "Adjust due to transaction update");
+                }
+            }
+            tx.setSavingGoal(newGoal);
+
+        } else if (oldType == TransactionType.SAVING && newType != TransactionType.SAVING) {
+            // SAVING -> NON-SAVING
+            if (oldGoal != null) {
+                adjustAmountForUpdate(oldGoal, oldAmount.negate(), "Revert due to transaction update (to non-saving)");
+            }
+            tx.setSavingGoal(null);
+
+        } else if (oldType != TransactionType.SAVING && newType == TransactionType.SAVING) {
+            // NON-SAVING -> SAVING
+            Long newGoalId = request.getSavingGoalId();
+            if (newGoalId == null) {
+                throw new RuntimeException("savingGoalId is required for SAVING transactions");
+            }
+            SavingGoal newGoal = requireOwnedGoal(newGoalId);
+            adjustAmountForUpdate(newGoal, newAmount, "Deposit due to transaction update (to saving)");
+            tx.setSavingGoal(newGoal);
+
+        } else {
+            // NON-SAVING -> NON-SAVING
+            tx.setSavingGoal(null);
+        }
+    }
+
 
     
 	
