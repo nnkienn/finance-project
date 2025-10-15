@@ -14,7 +14,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update        # Dev: tự update schema. Prod thì dùng validate
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -47,7 +47,7 @@ logging:
   level:
     org.springframework.security: WARN
     org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: INFO
     org.springframework.kafka.listener: INFO    # Log consumer startup
     org.springframework.kafka: INFO
 

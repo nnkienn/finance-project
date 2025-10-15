@@ -2,6 +2,8 @@ package com.finance.outbox;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +15,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "outbox", indexes = {
@@ -33,8 +37,9 @@ public class OutboxEvent {
     private String eventType;
 
     // lưu JSON payload dưới dạng text (Postgres jsonb tốt hơn nếu bạn cấu hình)
-    @Column(columnDefinition = "jsonb")
-    private String payload;
+    @Column(columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)     // Hibernate 6 map JSON/JSONB
+    private JsonNode payload;
 
     @Column(length = 20)
     private String status = "PENDING";

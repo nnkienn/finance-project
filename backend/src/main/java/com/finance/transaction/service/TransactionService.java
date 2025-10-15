@@ -18,6 +18,7 @@ import com.finance.category.entity.UserCategory;
 import com.finance.category.repository.UserCategoryRepository;
 import com.finance.kafka.dto.TransactionEventDTO;
 import com.finance.kafka.producer.TransactionEventPublisher;
+import com.finance.outbox.service.OutboxService;
 import com.finance.saving.entity.SavingGoal;
 import com.finance.saving.service.SavingGoalService;
 import com.finance.transaction.dto.MonthlyCardsResponse;
@@ -45,7 +46,8 @@ public class TransactionService implements RecurringPostingPort {
     private final UserCategoryRepository userCategoryRepository;
     private final TransactionEventPublisher transactionEventPublisher;
     private final SavingGoalService savingGoalService;
-
+    private final OutboxService outboxService;
+    
     // ================== CREATE ==================
 
     /**
@@ -92,15 +94,26 @@ public class TransactionService implements RecurringPostingPort {
 
         // 📨 Gửi event qua Kafka (transaction.created)
         try {
-            TransactionEventDTO event = new TransactionEventDTO(
-                    tx.getId(),
-                    user.getId(),
-                    tx.getAmount(),
-                    tx.getType().name(),
-                    tx.getPaymentMethod().name(),
-                    tx.getTransactionDate()
-            );
-            transactionEventPublisher.publish(event);
+        	var dto = TransactionEventDTO.builder()
+        		    .transactionId(tx.getId())
+        		    .userId(tx.getUser().getId())
+        		    .type(tx.getType().name())
+        		    .method(tx.getPaymentMethod().name())   // CHÚ Ý: entity là paymentMethod
+        		    .amount(tx.getAmount())
+        		    .transactionDate(tx.getTransactionDate())
+        		    .note(tx.getNote())
+        		    .userCategoryId(tx.getUserCategory() != null ? tx.getUserCategory().getId() : null)
+        		    .savingGoalId(tx.getSavingGoal() != null ? tx.getSavingGoal().getId() : null)
+        		    .build();
+
+        		outboxService.saveEvent(
+        		    "Transaction",
+        		    String.valueOf(tx.getId()),
+        		    "transaction.created",   // tên topic
+        		    dto
+        		);
+
+
         } catch (Exception e) {
             System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
             // Không throw để không rollback DB nếu Kafka lỗi
