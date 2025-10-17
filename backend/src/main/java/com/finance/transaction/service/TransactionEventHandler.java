@@ -47,15 +47,15 @@ public class TransactionEventHandler {
                 .orElseThrow(() -> new IllegalStateException("User not found: " + dto.getUserId()));
 
         notificationEventPublisher.publish(
-                NotificationEventDTO.builder()
-                        .userId(dto.getUserId())
-                        .type("transaction.created")
-                        .title("Giao dịch mới")
-                        .body("Bạn vừa tạo giao dịch " + dto.getAmount() + "₫")
-                        .payload(payload)
-                        .channel("EMAIL")
-                        .build()
-        );
+        	    NotificationEventDTO.builder()
+        	        .userId(dto.getUserId())
+        	        .type("transaction.created")
+        	        .title("Giao dịch mới")
+        	        .body("Bạn vừa tạo giao dịch " + dto.getAmount() + "₫")
+        	        .channel("IN_APP") // 🔔 chỉ in-app
+        	        .build()
+        	);
+
 
     }
 
