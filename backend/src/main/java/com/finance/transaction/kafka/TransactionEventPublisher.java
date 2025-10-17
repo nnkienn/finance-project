@@ -1,8 +1,10 @@
-package com.finance.kafka.producer;
+package com.finance.transaction.kafka;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import com.finance.kafka.dto.TransactionEventDTO;
+
+import com.finance.transaction.kafka.dto.TransactionEventDTO;
+
 import lombok.RequiredArgsConstructor;
 
 @Service

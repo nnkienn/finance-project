@@ -16,8 +16,6 @@ import com.finance.auth.entity.User;
 import com.finance.auth.util.SecurityUtils;
 import com.finance.category.entity.UserCategory;
 import com.finance.category.repository.UserCategoryRepository;
-import com.finance.kafka.dto.TransactionEventDTO;
-import com.finance.kafka.producer.TransactionEventPublisher;
 import com.finance.outbox.service.OutboxService;
 import com.finance.saving.entity.SavingGoal;
 import com.finance.saving.service.SavingGoalService;
@@ -31,6 +29,7 @@ import com.finance.transaction.entity.PaymentMethod;
 import com.finance.transaction.entity.Transaction;
 import com.finance.transaction.entity.TransactionSpecification;
 import com.finance.transaction.entity.TransactionType;
+import com.finance.transaction.kafka.dto.TransactionEventDTO;
 import com.finance.transaction.port.RecurringPostingPort;
 import com.finance.transaction.repository.TransactionRepository;
 import com.finance.transaction.repository.TransactionRepository.Kpis2;
@@ -44,7 +43,6 @@ public class TransactionService implements RecurringPostingPort {
 
     private final TransactionRepository transactionRepository;
     private final UserCategoryRepository userCategoryRepository;
-    private final TransactionEventPublisher transactionEventPublisher;
     private final SavingGoalService savingGoalService;
     private final OutboxService outboxService;
     

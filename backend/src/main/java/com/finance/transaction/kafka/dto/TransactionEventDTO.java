@@ -1,4 +1,4 @@
-package com.finance.kafka.dto;
+package com.finance.transaction.kafka.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
