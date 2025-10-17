@@ -50,7 +50,8 @@ public class OutboxPublisher {
 
                 ev.setStatus("SUCCESS");
                 outboxRepo.save(ev);
-                log.info("✅ Published outbox id={} topic={} key={}", ev.getId(), topic, key);
+                System.out.println(String.format("✅ Published outbox id=%s topic=%s key=%s",
+                        String.valueOf(ev.getId()), topic, key));
             } catch (Exception ex) {
                 ev.setAttempts(ev.getAttempts() + 1);
                 ev.setStatus(ev.getAttempts() >= MAX_ATTEMPTS ? "FAILED" : "RETRY");

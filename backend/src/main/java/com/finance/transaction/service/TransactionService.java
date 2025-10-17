@@ -95,23 +95,23 @@ public class TransactionService implements RecurringPostingPort {
         // 📨 Gửi event qua Kafka (transaction.created)
         try {
         	var dto = TransactionEventDTO.builder()
-        		    .transactionId(tx.getId())
-        		    .userId(tx.getUser().getId())
-        		    .type(tx.getType().name())
-        		    .method(tx.getPaymentMethod().name())   // CHÚ Ý: entity là paymentMethod
-        		    .amount(tx.getAmount())
-        		    .transactionDate(tx.getTransactionDate())
-        		    .note(tx.getNote())
-        		    .userCategoryId(tx.getUserCategory() != null ? tx.getUserCategory().getId() : null)
-        		    .savingGoalId(tx.getSavingGoal() != null ? tx.getSavingGoal().getId() : null)
-        		    .build();
+        	        .transactionId(tx.getId())
+        	        .userId(tx.getUser().getId())
+        	        .type(tx.getType())                    // enum OK
+        	        .method(tx.getPaymentMethod())         // enum OK
+        	        .amount(tx.getAmount())
+        	        .transactionDate(tx.getTransactionDate())
+        	        .note(tx.getNote())
+        	        .userCategoryId(tx.getUserCategory() != null ? tx.getUserCategory().getId() : null)
+        	        .savingGoalId(tx.getSavingGoal() != null ? tx.getSavingGoal().getId() : null)
+        	        .build();
 
-        		outboxService.saveEvent(
-        		    "Transaction",
-        		    String.valueOf(tx.getId()),
-        		    "transaction.created",   // tên topic
-        		    dto
-        		);
+        	outboxService.saveEvent(
+        	    "Transaction",
+        	    String.valueOf(tx.getId()),
+        	    "transaction.created",
+        	    dto
+        	);
 
 
         } catch (Exception e) {

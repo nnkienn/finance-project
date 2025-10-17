@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.finance.notification.Notification;
+import com.finance.notification.NotificationStatus;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -15,4 +16,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     // Đếm thông báo chưa đọc
     long countByUserIdAndIsReadFalse(Long userId);
+    
+    List<Notification> findTop50ByStatusOrderByCreatedAtAsc(NotificationStatus status);
+
 }

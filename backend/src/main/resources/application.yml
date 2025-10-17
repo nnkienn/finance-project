@@ -13,7 +13,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update        # Dev: tự update schema. Prod thì dùng validate
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -21,7 +21,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   kafka:
-    bootstrap-servers: host.docker.internal:9092
+    bootstrap-servers: localhost:9092         # (nếu Kafka chạy Docker local với ADVERTISED localhost)
     consumer:
       group-id: finance-app
       auto-offset-reset: earliest
@@ -45,16 +45,26 @@ server:
 
 logging:
   level:
-    org.springframework.security: WARN
-    org.springframework.web: INFO
+    org.springframework.kafka: DEBUG
+    org.springframework.kafka.listener: DEBUG
+    org.springframework.kafka.core.KafkaTemplate: DEBUG
+    org.springframework.kafka.support.serializer: DEBUG
+    org.apache.kafka.clients: INFO
+    org.apache.kafka.common.network: INFO
+    org.apache.kafka.common.metrics: WARN
     org.hibernate.SQL: INFO
-    org.springframework.kafka.listener: INFO    # Log consumer startup
-    org.springframework.kafka: INFO
+    org.hibernate.orm.jdbc.bind: INFO
 
 app:
   jwt:
     base64-secret: Lx28C1P6FJvJZp3SkX5y2y4j3KX3iU7+M7XAZmUjB6c=
-    access-token-validity-seconds: 900           # 15 phút
-    refresh-token-validity-seconds: 604800       # 7 ngày
+    access-token-validity-seconds: 900
+    refresh-token-validity-seconds: 604800
   verification:
-    expire-minutes: 60                           # Thời hạn xác minh email
+    expire-minutes: 60
+  outbox:
+    cleanup:
+      enabled: true
+      retention-days: 14
+      batch-size: 500
+      cron: "0 0 3 * * *"
