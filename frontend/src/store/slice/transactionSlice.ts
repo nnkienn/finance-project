@@ -1,4 +1,3 @@
-// src/store/slice/transactionSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { Transaction } from "@/type/transaction";
 import {
@@ -40,6 +39,9 @@ export const deleteTransaction = createAsyncThunk<number, number>(
   }
 );
 
+// =====================
+// Async thunks – FILTER & PAGED
+// =====================
 export const filterTransactions = createAsyncThunk<
   Transaction[],
   {
@@ -69,24 +71,8 @@ export const fetchTransactionsPaged = createAsyncThunk<
   transactionService.getTransactionsPaged(params)
 );
 
-export const filterTransactionsPaged = createAsyncThunk<
-  PagedResponse<Transaction>,
-  {
-    startDate?: string;
-    endDate?: string;
-    type?: "EXPENSE" | "INCOME" | "SAVING";
-    categoryId?: number;
-    paymentMethod?: string;
-    page?: number;
-    size?: number;
-    sort?: string;
-  }
->("transactions/filterPaged", async (params) =>
-  transactionService.getTransactionsPaged(params)
-);
-
 // =====================
-// Async thunks – Charts/KPIs
+// Async thunks – Analytics
 // =====================
 
 // 4 ô cards
@@ -97,30 +83,54 @@ export const fetchMonthlyCards = createAsyncThunk<
   transactionService.getMonthlyCards(month, year)
 );
 
-// Pie theo danh mục (All Expenses mặc định)
+// Pie theo danh mục
 export const fetchCategoryBreakdown = createAsyncThunk<
   Record<string, number>,
   { month: number; year: number; type?: TransactionType }
 >("transactions/fetchCategoryBreakdown", async ({ month, year, type = "EXPENSE" }) =>
-  transactionService.getCategoryBreakdown(month, year, type) as Promise<Record<string, number>>
+  transactionService.getCategoryBreakdown(month, year, type)
 );
 
-// Pie theo phương thức
+// Pie theo phương thức thanh toán
 export const fetchPaymentBreakdown = createAsyncThunk<
   Record<string, number>,
   { month: number; year: number; type?: TransactionType }
 >("transactions/fetchPaymentBreakdown", async ({ month, year, type = "EXPENSE" }) =>
-  transactionService.getPaymentBreakdown(month, year, type) as Promise<Record<string, number>>
+  transactionService.getPaymentBreakdown(month, year, type)
 );
 
-// Money Flow (timeseries)
+// Timeseries – Money Flow chart
 export const fetchTimeseries = createAsyncThunk<
   TimeseriesResponse["points"],
-  { from: string; to: string; granularity?: "DAILY" | "WEEKLY" | "MONTHLY"; scope?: "ALL" | "INCOME" | "EXPENSE" }
+  {
+    from: string;
+    to: string;
+    granularity?: "DAILY" | "WEEKLY" | "MONTHLY";
+    scope?: "ALL" | "INCOME" | "EXPENSE";
+  }
 >("transactions/fetchTimeseries", async (params) => {
   const res = await transactionService.getTimeseries(params);
   return res.points;
 });
+
+// Tổng riêng lẻ
+export const fetchTotalSaving = createAsyncThunk<number>(
+  "transactions/fetchTotalSaving",
+  async () => await transactionService.getTotalSaving()
+);
+export const fetchTotalIncome = createAsyncThunk<number>(
+  "transactions/fetchTotalIncome",
+  async () => await transactionService.getTotalIncome()
+);
+export const fetchTotalExpense = createAsyncThunk<number>(
+  "transactions/fetchTotalExpense",
+  async () => await transactionService.getTotalExpense()
+);
+
+// ✅ Tổng hợp tất cả
+export const fetchAllTotals = createAsyncThunk<
+  { totalIncome: number; totalExpense: number; totalSaving: number }
+>("transactions/fetchAllTotals", async () => await transactionService.getAllTotals());
 
 // =====================
 // Slice
@@ -136,7 +146,7 @@ interface TransactionState {
   page: number;
   size: number;
 
-  // charts/KPIs
+  // cards & charts
   cards: MonthlyCardsResponse | null;
   cardsLoading: boolean;
 
@@ -146,6 +156,12 @@ interface TransactionState {
   categoryBreakdown: Record<string, number> | null;
   paymentBreakdown: Record<string, number> | null;
   timeseries: { date: string; income: number; expense: number; net: number }[];
+
+  // totals
+  totalSaving: number;
+  totalIncome: number;
+  totalExpense: number;
+  totalsLoading: boolean;
 }
 
 const initialState: TransactionState = {
@@ -166,6 +182,11 @@ const initialState: TransactionState = {
   categoryBreakdown: null,
   paymentBreakdown: null,
   timeseries: [],
+
+  totalSaving: 0,
+  totalIncome: 0,
+  totalExpense: 0,
+  totalsLoading: false,
 };
 
 const transactionSlice = createSlice({
@@ -174,89 +195,51 @@ const transactionSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // ===== fetch all =====
+      // ===== CRUD =====
       .addCase(fetchTransactions.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchTransactions.fulfilled, (state, action: PayloadAction<Transaction[]>) => {
         state.loading = false;
-        // tránh mutate payload
         state.items = [...action.payload].sort(
-          (a, b) =>
-            new Date(b.transactionDate).getTime() -
-            new Date(a.transactionDate).getTime()
+          (a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
         );
       })
       .addCase(fetchTransactions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to load transactions";
       })
-
-      // ===== create =====
-      .addCase(createTransaction.pending, (state) => {
-        state.error = null;
-      })
       .addCase(createTransaction.fulfilled, (state, action: PayloadAction<Transaction>) => {
         state.items = [action.payload, ...state.items];
-      })
-      .addCase(createTransaction.rejected, (state, action) => {
-        state.error = action.error.message || "Create failed";
-      })
-
-      // ===== update =====
-      .addCase(updateTransaction.pending, (state) => {
-        state.error = null;
       })
       .addCase(updateTransaction.fulfilled, (state, action: PayloadAction<Transaction>) => {
         const idx = state.items.findIndex((t) => t.id === action.payload.id);
         if (idx >= 0) state.items[idx] = action.payload;
-        state.items = [...state.items].sort(
-          (a, b) =>
-            new Date(b.transactionDate).getTime() -
-            new Date(a.transactionDate).getTime()
-        );
-      })
-      .addCase(updateTransaction.rejected, (state, action) => {
-        state.error = action.error.message || "Update failed";
-      })
-
-      // ===== delete =====
-      .addCase(deleteTransaction.rejected, (state, action) => {
-        state.error = action.error.message || "Delete failed";
       })
       .addCase(deleteTransaction.fulfilled, (state, action: PayloadAction<number>) => {
         state.items = state.items.filter((t) => t.id !== action.payload);
-        // Optional: cập nhật totalElements nếu bạn hiển thị
-        if (state.totalElements > 0) state.totalElements -= 1;
       })
 
-      // ===== filter non-paged =====
-      .addCase(filterTransactions.fulfilled, (state, action: PayloadAction<Transaction[]>) => {
-        state.items = [...action.payload].sort(
-          (a, b) =>
-            new Date(b.transactionDate).getTime() -
-            new Date(a.transactionDate).getTime()
-        );
+      // ===== PAGED FETCH =====
+      .addCase(fetchTransactionsPaged.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
-
-      // ===== fetch paged / filter paged =====
       .addCase(fetchTransactionsPaged.fulfilled, (state, action: PayloadAction<PagedResponse<Transaction>>) => {
+        state.loading = false;
         state.items = action.payload.content;
         state.totalPages = action.payload.totalPages;
         state.totalElements = action.payload.totalElements;
         state.page = action.payload.number;
         state.size = action.payload.size;
       })
-      .addCase(filterTransactionsPaged.fulfilled, (state, action: PayloadAction<PagedResponse<Transaction>>) => {
-        state.items = action.payload.content;
-        state.totalPages = action.payload.totalPages;
-        state.totalElements = action.payload.totalElements;
-        state.page = action.payload.number;
-        state.size = action.payload.size;
+      .addCase(fetchTransactionsPaged.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to load paged transactions";
       })
 
-      // ===== cards =====
+      // ===== Analytics: Cards =====
       .addCase(fetchMonthlyCards.pending, (state) => {
         state.cardsLoading = true;
       })
@@ -269,45 +252,35 @@ const transactionSlice = createSlice({
         state.chartsError = action.error.message || "Load cards failed";
       })
 
-      // ===== breakdowns =====
-      .addCase(fetchCategoryBreakdown.pending, (state) => {
-        state.chartsLoading = true;
-        state.chartsError = null;
-      })
+      // ===== Breakdown =====
       .addCase(fetchCategoryBreakdown.fulfilled, (state, action: PayloadAction<Record<string, number>>) => {
-        state.chartsLoading = false;
         state.categoryBreakdown = action.payload;
       })
-      .addCase(fetchCategoryBreakdown.rejected, (state, action) => {
-        state.chartsLoading = false;
-        state.chartsError = action.error.message || "Load category breakdown failed";
-      })
-
-      .addCase(fetchPaymentBreakdown.pending, (state) => {
-        state.chartsLoading = true;
-        state.chartsError = null;
-      })
       .addCase(fetchPaymentBreakdown.fulfilled, (state, action: PayloadAction<Record<string, number>>) => {
-        state.chartsLoading = false;
         state.paymentBreakdown = action.payload;
       })
-      .addCase(fetchPaymentBreakdown.rejected, (state, action) => {
-        state.chartsLoading = false;
-        state.chartsError = action.error.message || "Load payment breakdown failed";
-      })
 
-      // ===== timeseries =====
-      .addCase(fetchTimeseries.pending, (state) => {
-        state.chartsLoading = true;
-        state.chartsError = null;
-      })
+      // ===== Timeseries =====
       .addCase(fetchTimeseries.fulfilled, (state, action: PayloadAction<TimeseriesResponse["points"]>) => {
-        state.chartsLoading = false;
         state.timeseries = action.payload;
       })
-      .addCase(fetchTimeseries.rejected, (state, action) => {
-        state.chartsLoading = false;
-        state.chartsError = action.error.message || "Load timeseries failed";
+
+      // ===== Totals =====
+      .addCase(fetchAllTotals.pending, (state) => {
+        state.totalsLoading = true;
+      })
+      .addCase(
+        fetchAllTotals.fulfilled,
+        (state, action: PayloadAction<{ totalIncome: number; totalExpense: number; totalSaving: number }>) => {
+          state.totalsLoading = false;
+          state.totalIncome = action.payload.totalIncome;
+          state.totalExpense = action.payload.totalExpense;
+          state.totalSaving = action.payload.totalSaving;
+        }
+      )
+      .addCase(fetchAllTotals.rejected, (state, action) => {
+        state.totalsLoading = false;
+        state.chartsError = action.error.message || "Load all totals failed";
       });
   },
 });

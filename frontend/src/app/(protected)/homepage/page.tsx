@@ -38,7 +38,7 @@ export default function Homepage() {
           {/* CENTER CONTENT */}
           <div className="col-span-12 md:col-span-9 space-y-6">
             {/* Summary Cards */}
-            <SummaryCards defaultMonth={month} defaultYear={year} />
+            <SummaryCards />
 
             {/* Row 1: Money Flow + My Savings */}
             <div className="grid grid-cols-12 gap-6">

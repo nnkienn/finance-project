@@ -57,6 +57,10 @@ public class SavingGoal {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @OneToMany(mappedBy = "savingGoal", fetch = FetchType.LAZY)
+    private List<SavingHistory> histories;
+
+    
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

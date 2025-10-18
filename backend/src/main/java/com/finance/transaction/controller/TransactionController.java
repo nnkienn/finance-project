@@ -96,44 +96,7 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.getLatestTransactions(limit));
     }
 
-    // ====== KPIs cơ bản (INCOME/EXPENSE/NET) - nếu bạn vẫn muốn giữ /summary kiểu Map ======
-    @GetMapping("/summary")
-    public ResponseEntity<Map<String, BigDecimal>> getMonthlySummary(
-            @RequestParam int month,
-            @RequestParam int year
-    ) {
-        return ResponseEntity.ok(transactionService.getMonthlySummary(month, year));
-    }
-
-    // ====== Cards cho 4 ô: MyBalance / Income / Savings / Expenses (+% so với tháng trước) ======
-    @GetMapping("/cards")
-    public ResponseEntity<MonthlyCardsResponse> getMonthlyCards(
-            @RequestParam int month,
-            @RequestParam int year
-    ) {
-        return ResponseEntity.ok(transactionService.getMonthlyCards(month, year));
-    }
-
-    // ====== Pie theo DANH MỤC (All Expenses) ======
-    @GetMapping("/category-breakdown")
-    public ResponseEntity<Map<String, BigDecimal>> getCategoryBreakdown(
-            @RequestParam int month,
-            @RequestParam int year,
-            @RequestParam(defaultValue = "EXPENSE") TransactionType type // cho phép đổi sang INCOME nếu cần
-    ) {
-        return ResponseEntity.ok(transactionService.getCategoryBreakdown(month, year, type));
-    }
-
-    // ====== Pie theo PHƯƠNG THỨC thanh toán ======
-    @GetMapping("/payment-breakdown")
-    public ResponseEntity<Map<String, BigDecimal>> getPaymentMethodBreakdown(
-            @RequestParam int month,
-            @RequestParam int year,
-            @RequestParam(defaultValue = "EXPENSE") TransactionType type
-    ) {
-        return ResponseEntity.ok(transactionService.getPaymentMethodBreakdown(month, year, type));
-    }
-
+   
     // ====== Timeseries cho Money Flow ======
     @GetMapping("/timeseries")
     public ResponseEntity<?> getTimeseries(

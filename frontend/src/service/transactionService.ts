@@ -1,22 +1,20 @@
-// src/service/transactionService.ts
 import api from "./apiService";
 import { TransactionType } from "@/type/TransactionType";
 import { Transaction } from "@/type/transaction";
 
 const API_URL = "/api/transactions";
+const ANALYTICS_URL = `${API_URL}/analytics`; // ✅ tách prefix riêng
 
 // ---------- Types ----------
-// TransactionPayload: allow either userCategoryId or savingGoalId (both optional)
 export interface TransactionPayload {
   amount: number;
   type: TransactionType;              // "EXPENSE" | "INCOME" | "SAVING"
-  paymentMethod?: string;             // optional, backend will default if needed
+  paymentMethod?: string;
   note: string;
-  transactionDate: string;            // ISO: "2025-10-08T09:00:00"
+  transactionDate: string;
   userCategoryId?: number | null;
   savingGoalId?: number | null;
 }
-
 
 export interface PagedResponse<T> {
   content: T[];
@@ -26,7 +24,6 @@ export interface PagedResponse<T> {
   size: number;
 }
 
-// Dashboard cards
 export interface MonthlyCardsResponse {
   myBalance: number;
   income: number;
@@ -37,13 +34,9 @@ export interface MonthlyCardsResponse {
   expensesPct: number;
 }
 
-// Simple summary map: { INCOME, EXPENSE, NET }
 export type SummaryMap = Record<string, number>;
-
-// Pie breakdown (BE trả về map)
 export type BreakdownMap = Record<string, number>;
 
-// Timeseries
 export interface TimeseriesPoint {
   date: string;
   income: number;
@@ -56,7 +49,7 @@ export interface TimeseriesResponse {
 
 // ---------- Service ----------
 export const transactionService = {
-  // CRUD
+  // ==================== CRUD ====================
   async createTransaction(payload: TransactionPayload): Promise<Transaction> {
     const { data } = await api.post(API_URL, payload);
     return data;
@@ -81,13 +74,12 @@ export const transactionService = {
     await api.delete(`${API_URL}/${id}`);
   },
 
-  // Latest
   async getLatestTransactions(limit = 5): Promise<Transaction[]> {
     const { data } = await api.get(`${API_URL}/latest`, { params: { limit } });
     return data;
   },
 
-  // Filter (non-paged)
+  // ==================== FILTER ====================
   async getTransactionsFiltered(params: {
     startDate?: string;
     endDate?: string;
@@ -99,7 +91,6 @@ export const transactionService = {
     return data;
   },
 
-  // Filter + Pagination
   async getTransactionsPaged(params: {
     startDate?: string;
     endDate?: string;
@@ -108,48 +99,77 @@ export const transactionService = {
     paymentMethod?: string;
     page?: number;
     size?: number;
-    sort?: string; // "transactionDate,desc"
+    sort?: string;
   }): Promise<PagedResponse<Transaction>> {
     const { data } = await api.get(`${API_URL}/filter-paged`, { params });
     return data;
   },
 
-  // ===== Dashboard cards (4 ô) =====
+  // ==================== ANALYTICS ====================
+
+  // 4 ô cards
   async getMonthlyCards(month: number, year: number): Promise<MonthlyCardsResponse> {
-    const { data } = await api.get(`${API_URL}/cards`, { params: { month, year } });
+    const { data } = await api.get(`${ANALYTICS_URL}/cards`, { params: { month, year } });
     return data;
   },
 
-  // (Optional) summary {INCOME, EXPENSE, NET}
+  // Summary: INCOME / EXPENSE / NET
   async getMonthlySummary(month: number, year: number): Promise<SummaryMap> {
-    const { data } = await api.get(`${API_URL}/summary`, { params: { month, year } });
+    const { data } = await api.get(`${ANALYTICS_URL}/summary`, { params: { month, year } });
     return data;
   },
 
-  // Pie: category breakdown (All Expenses → type=EXPENSE)
+  // Pie: Category breakdown
   async getCategoryBreakdown(
     month: number,
     year: number,
     type: TransactionType = "EXPENSE"
   ): Promise<BreakdownMap> {
-    const { data } = await api.get(`${API_URL}/category-breakdown`, { params: { month, year, type } });
+    const { data } = await api.get(`${ANALYTICS_URL}/category-breakdown`, { params: { month, year, type } });
     return data;
   },
 
-  // Pie: payment method breakdown
+  // Pie: Payment method breakdown
   async getPaymentBreakdown(
     month: number,
     year: number,
     type: TransactionType = "EXPENSE"
   ): Promise<BreakdownMap> {
-    const { data } = await api.get(`${API_URL}/payment-breakdown`, { params: { month, year, type } });
+    const { data } = await api.get(`${ANALYTICS_URL}/payment-breakdown`, { params: { month, year, type } });
     return data;
   },
 
-  // Timeseries for Money Flow
+  // ==================== Tổng cộng ====================
+
+  async getTotalSaving(): Promise<number> {
+    const { data } = await api.get(`${ANALYTICS_URL}/total-saving`);
+    return data;
+  },
+
+  async getTotalIncome(): Promise<number> {
+    const { data } = await api.get(`${ANALYTICS_URL}/total-income`);
+    return data;
+  },
+
+  async getTotalExpense(): Promise<number> {
+    const { data } = await api.get(`${ANALYTICS_URL}/total-expense`);
+    return data;
+  },
+
+async getAllTotals(): Promise<{
+  totalIncome: number;
+  totalExpense: number;
+  totalSaving: number;
+}> {
+  const { data } = await api.get(`${ANALYTICS_URL}/total-all`);
+  return data;
+},
+
+
+  // ==================== Timeseries ====================
   async getTimeseries(params: {
-    from: string; // "YYYY-MM-DD"
-    to: string;   // "YYYY-MM-DD"
+    from: string;
+    to: string;
     granularity?: "DAILY" | "WEEKLY" | "MONTHLY";
     scope?: "ALL" | "INCOME" | "EXPENSE";
   }): Promise<TimeseriesResponse> {

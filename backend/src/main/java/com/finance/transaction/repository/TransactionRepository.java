@@ -218,4 +218,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
 			""")
 	List<Object[]> getSavingTrendByWeek(@Param("userId") Long userId);
 
+	@Query("""
+			    SELECT COALESCE(SUM(t.amount), 0)
+			    FROM Transaction t
+			    WHERE t.user.id = :userId AND t.type = :type
+			""")
+	BigDecimal sumAmountByUserAndType(Long userId, TransactionType type);
+
 }
