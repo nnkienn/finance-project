@@ -6,6 +6,8 @@ import * as service from "@/service/userCategoryService";
 // =====================
 // Async thunks
 // =====================
+
+// CRUD cơ bản
 export const fetchUserCategories = createAsyncThunk(
   "userCategories/fetchAll",
   async () => await service.getUserCategories()
@@ -58,18 +60,53 @@ export const importDefaultUserCategory = createAsyncThunk(
 );
 
 // =====================
+// Dashboard Thunks
+// =====================
+
+// Chi tiêu theo danh mục (donut)
+export const fetchExpensesByCategory = createAsyncThunk(
+  "userCategories/expensesByCategory",
+  async (params?: { month?: number; year?: number }) =>
+    await service.getExpensesByCategory(params?.month, params?.year)
+);
+
+// Top danh mục chi tiêu
+export const fetchTopExpenseCategories = createAsyncThunk(
+  "userCategories/topExpenseCategories",
+  async (params?: { month?: number; year?: number; limit?: number }) =>
+    await service.getTopExpenseCategories(
+      params?.month,
+      params?.year,
+      params?.limit || 3
+    )
+);
+
+// Đếm số lượng category theo type
+export const fetchCountByType = createAsyncThunk(
+  "userCategories/countByType",
+  async () => await service.countUserCategoriesByType()
+);
+
+// =====================
 // Slice
 // =====================
+
 interface UserCategoryState {
   items: UserCategory[];
   loading: boolean;
   error: string | null;
+  expensesByCategory: { name: string; amount: number }[];
+  topExpenseCategories: { name: string; amount: number }[];
+  countByType: Record<string, number>;
 }
 
 const initialState: UserCategoryState = {
   items: [],
   loading: false,
   error: null,
+  expensesByCategory: [],
+  topExpenseCategories: [],
+  countByType: {},
 };
 
 const userCategorySlice = createSlice({
@@ -78,7 +115,9 @@ const userCategorySlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // fetchAll
+      // =====================
+      // CRUD
+      // =====================
       .addCase(fetchUserCategories.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -95,7 +134,6 @@ const userCategorySlice = createSlice({
         state.error = action.error.message || "Failed to load user categories";
       })
 
-      // fetchByMaster
       .addCase(
         fetchUserCategoriesByMaster.fulfilled,
         (state, action: PayloadAction<UserCategory[]>) => {
@@ -103,7 +141,6 @@ const userCategorySlice = createSlice({
         }
       )
 
-      // create
       .addCase(
         addUserCategory.fulfilled,
         (state, action: PayloadAction<UserCategory>) => {
@@ -111,7 +148,6 @@ const userCategorySlice = createSlice({
         }
       )
 
-      // update
       .addCase(
         editUserCategory.fulfilled,
         (state, action: PayloadAction<UserCategory>) => {
@@ -120,7 +156,6 @@ const userCategorySlice = createSlice({
         }
       )
 
-      // delete
       .addCase(
         removeUserCategory.fulfilled,
         (state, action: PayloadAction<number>) => {
@@ -128,7 +163,6 @@ const userCategorySlice = createSlice({
         }
       )
 
-      // filter
       .addCase(
         filterUserCategory.fulfilled,
         (state, action: PayloadAction<UserCategory[]>) => {
@@ -136,7 +170,6 @@ const userCategorySlice = createSlice({
         }
       )
 
-      // search
       .addCase(
         searchUserCategory.fulfilled,
         (state, action: PayloadAction<UserCategory[]>) => {
@@ -144,11 +177,34 @@ const userCategorySlice = createSlice({
         }
       )
 
-      // import default
       .addCase(
         importDefaultUserCategory.fulfilled,
         (state, action: PayloadAction<UserCategory[]>) => {
           state.items = action.payload;
+        }
+      )
+
+      // =====================
+      // Dashboard reducers
+      // =====================
+      .addCase(
+        fetchExpensesByCategory.fulfilled,
+        (state, action: PayloadAction<{ name: string; amount: number }[]>) => {
+          state.expensesByCategory = action.payload;
+        }
+      )
+
+      .addCase(
+        fetchTopExpenseCategories.fulfilled,
+        (state, action: PayloadAction<{ name: string; amount: number }[]>) => {
+          state.topExpenseCategories = action.payload;
+        }
+      )
+
+      .addCase(
+        fetchCountByType.fulfilled,
+        (state, action: PayloadAction<Record<string, number>>) => {
+          state.countByType = action.payload;
         }
       );
   },

@@ -5,56 +5,46 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { breakdownService } from "@/service/breakdownService";
 
-const COLORS = [
-  "#ef4444", "#3b82f6", "#f97316", "#22c55e", "#a855f7", "#9ca3af",
-];
+const COLORS = ["#ef4444", "#3b82f6", "#f97316", "#22c55e", "#a855f7", "#9ca3af"];
 
 export default function TransactionRightSidebar() {
   const now = new Date();
-
-  // 📊 Category
   const [categoryMonth, setCategoryMonth] = useState(now.getMonth() + 1);
   const [categoryYear, setCategoryYear] = useState(now.getFullYear());
   const [categoryData, setCategoryData] = useState<any[]>([]);
-  const [highlightCategory, setHighlightCategory] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(true);
 
-  // 💳 Payment
   const [paymentMonth, setPaymentMonth] = useState(now.getMonth() + 1);
   const [paymentYear, setPaymentYear] = useState(now.getFullYear());
   const [paymentData, setPaymentData] = useState<any[]>([]);
-  const [highlightPayment, setHighlightPayment] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(true);
 
-  // ----------- FETCHERS -----------
   const fetchCategory = async (m: number, y: number) => {
-    const data = await breakdownService.getCategoryBreakdown(m, y);
-    const mapped = Object.entries(data || {}).map(([k, v], i) => ({
+    setCategoryLoading(true);
+    const res = await breakdownService.getCategoryBreakdown(m, y);
+    const mapped = Object.entries(res || {}).map(([k, v], i) => ({
       name: k,
       value: Number(v),
       color: COLORS[i % COLORS.length],
     }));
-    setCategoryData(mapped);
-    triggerHighlight("category");
+    setTimeout(() => {
+      setCategoryData(mapped);
+      setCategoryLoading(false);
+    }, 250);
   };
 
   const fetchPayment = async (m: number, y: number) => {
-    const data = await breakdownService.getPaymentBreakdown(m, y);
-    const mapped = Object.entries(data || {}).map(([k, v], i) => ({
+    setPaymentLoading(true);
+    const res = await breakdownService.getPaymentBreakdown(m, y);
+    const mapped = Object.entries(res || {}).map(([k, v], i) => ({
       name: k,
       value: Number(v),
       color: COLORS[i % COLORS.length],
     }));
-    setPaymentData(mapped);
-    triggerHighlight("payment");
-  };
-
-  const triggerHighlight = (section: "category" | "payment") => {
-    if (section === "category") {
-      setHighlightCategory(true);
-      setTimeout(() => setHighlightCategory(false), 1000);
-    } else {
-      setHighlightPayment(true);
-      setTimeout(() => setHighlightPayment(false), 1000);
-    }
+    setTimeout(() => {
+      setPaymentData(mapped);
+      setPaymentLoading(false);
+    }, 250);
   };
 
   useEffect(() => {
@@ -65,85 +55,76 @@ export default function TransactionRightSidebar() {
   return (
     <motion.div
       className="col-span-12 md:col-span-3 space-y-6"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
     >
-      <div className="bg-white rounded-2xl shadow p-6 space-y-8">
-        <Section
-          title="Category Breakdown"
-          data={categoryData}
-          month={categoryMonth}
-          year={categoryYear}
-          highlight={highlightCategory}
-          onChangeMonth={(m) => {
-            setCategoryMonth(m);
-            fetchCategory(m, categoryYear);
-          }}
-          onChangeYear={(y) => {
-            setCategoryYear(y);
-            fetchCategory(categoryMonth, y);
-          }}
-        />
+      <SmoothSection
+        title="Category Breakdown"
+        data={categoryData}
+        loading={categoryLoading}
+        month={categoryMonth}
+        year={categoryYear}
+        onChangeMonth={(m) => {
+          setCategoryMonth(m);
+          fetchCategory(m, categoryYear);
+        }}
+        onChangeYear={(y) => {
+          setCategoryYear(y);
+          fetchCategory(categoryMonth, y);
+        }}
+      />
 
-        <hr className="border-gray-200" />
-
-        <Section
-          title="Payment Breakdown"
-          data={paymentData}
-          month={paymentMonth}
-          year={paymentYear}
-          highlight={highlightPayment}
-          onChangeMonth={(m) => {
-            setPaymentMonth(m);
-            fetchPayment(m, paymentYear);
-          }}
-          onChangeYear={(y) => {
-            setPaymentYear(y);
-            fetchPayment(paymentMonth, y);
-          }}
-        />
-      </div>
+      <SmoothSection
+        title="Payment Breakdown"
+        data={paymentData}
+        loading={paymentLoading}
+        month={paymentMonth}
+        year={paymentYear}
+        onChangeMonth={(m) => {
+          setPaymentMonth(m);
+          fetchPayment(m, paymentYear);
+        }}
+        onChangeYear={(y) => {
+          setPaymentYear(y);
+          fetchPayment(paymentMonth, y);
+        }}
+      />
     </motion.div>
   );
 }
 
-// -------------------- SECTION --------------------
-function Section({
+function SmoothSection({
   title,
   data,
+  loading,
   month,
   year,
-  highlight,
   onChangeMonth,
   onChangeYear,
 }: {
   title: string;
   data: any[];
+  loading: boolean;
   month: number;
   year: number;
-  highlight: boolean;
   onChangeMonth: (m: number) => void;
   onChangeYear: (y: number) => void;
 }) {
   const years = [2023, 2024, 2025, 2026];
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const total = data.reduce((s, d) => s + d.value, 0);
 
   return (
     <motion.div
-      animate={
-        highlight
-          ? {
-              scale: 1.02,
-              boxShadow: "0 0 15px rgba(37,99,235,0.25)",
-              backgroundColor: ["#f0f9ff", "#ffffff"],
-            }
-          : { scale: 1, boxShadow: "0 0 0 rgba(0,0,0,0)", backgroundColor: "#fff" }
-      }
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      className="rounded-xl p-3 transition"
+      layout
+      className="bg-white rounded-2xl shadow p-5 flex flex-col items-center transition-all duration-300 hover-glow"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
     >
-      <div className="flex justify-between items-center mb-3">
+      {/* Header */}
+      <div className="flex justify-between items-center w-full mb-4">
         <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
         <div className="flex items-center gap-1">
           <select
@@ -171,76 +152,93 @@ function Section({
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {data.length === 0 ? (
-          <motion.p
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-xs text-gray-400 italic mt-6 text-center"
-          >
-            Không có dữ liệu cho tháng này.
-          </motion.p>
-        ) : (
-          <motion.div
-            key="chart"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex flex-col items-center"
-          >
+      {/* Body */}
+      <div className="w-full flex flex-col items-center">
+        <AnimatePresence mode="wait">
+          {loading ? (
             <motion.div
-              className="w-32 h-32 mb-5"
-              animate={
-                highlight
-                  ? { scale: 1.08, filter: "brightness(1.25)" }
-                  : { scale: 1, filter: "brightness(1)" }
-              }
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              key="loading"
+              className="flex flex-col items-center justify-center py-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data}
-                    innerRadius={40}
-                    outerRadius={65}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="w-[120px] h-[120px] rounded-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse" />
+              <p className="text-sm text-gray-400 mt-2">Đang tải...</p>
             </motion.div>
+          ) : data.length === 0 ? (
+            <motion.p
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-xs text-gray-400 italic mt-10"
+            >
+              Không có dữ liệu cho tháng này.
+            </motion.p>
+          ) : (
+            <motion.div
+              key="chart"
+              className="flex flex-col items-center"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            >
+              <div className="relative w-[130px] h-[130px] mb-5">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={data}
+                      dataKey="value"
+                      innerRadius={40}
+                      outerRadius={60}
+                      paddingAngle={2}
+                      stroke="#fff"
+                      strokeWidth={2}
+                    >
+                      {data.map((entry, i) => (
+                        <Cell key={`cell-${i}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
 
-            <div className="w-full space-y-2">
-              {data.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between items-center text-gray-700 text-sm px-2"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="truncate text-[13px] font-medium text-left">
-                      {item.name}
-                    </span>
-                  </div>
-                  <span className="text-[13px] font-semibold text-gray-800 tabular-nums">
-                    {item.value.toLocaleString("vi-VN")}đ
-                  </span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <p className="text-[12px] text-gray-400">Tổng</p>
+                  <p className="text-[14px] font-semibold text-gray-800 tabular-nums">
+                    {total.toLocaleString("vi-VN")}₫
+                  </p>
                 </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </div>
+
+              <div className="w-full space-y-1.5">
+                {data.map((item, idx) => (
+                  <motion.div
+                    key={idx}
+                    className="flex justify-between items-center text-gray-700 text-[13px] px-2 py-0.5 rounded-md hover:bg-pink-50/40 transition-colors"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.04 }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="truncate font-medium">{item.name}</span>
+                    </div>
+                    <span className="font-semibold text-gray-800 tabular-nums">
+                      {item.value.toLocaleString("vi-VN")}đ
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 }

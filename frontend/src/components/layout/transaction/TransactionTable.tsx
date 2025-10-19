@@ -2,6 +2,7 @@
 
 import { Pencil } from "lucide-react";
 import { Transaction } from "@/type/transaction";
+import { motion } from "framer-motion";
 
 interface Props {
   transactions: Transaction[];
@@ -39,10 +40,17 @@ export default function TransactionTable({ transactions, onEdit, onDelete }: Pro
             <th className="px-4 py-3 text-center w-[70px]">Action</th>
           </tr>
         </thead>
+
         <tbody>
-          {transactions.map((tx) => (
-            <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50 transition">
-              <td className="px-4 py-3 whitespace-nowrap">
+          {transactions.map((tx, idx) => (
+            <motion.tr
+              key={tx.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.04, duration: 0.25, ease: "easeOut" }}
+              className="border-b last:border-0"
+            >
+              <td className="px-4 py-3 whitespace-nowrap text-gray-600">
                 {new Date(tx.transactionDate).toLocaleDateString("vi-VN")}
               </td>
               <td className="px-4 py-3 truncate">{tx.note}</td>
@@ -70,18 +78,18 @@ export default function TransactionTable({ transactions, onEdit, onDelete }: Pro
               <td className="px-4 py-3 text-center flex gap-2 justify-center">
                 <button
                   onClick={() => onEdit(tx)}
-                  className="text-blue-500 hover:text-blue-700"
+                  className="text-blue-500 hover:text-blue-700 transition-transform hover:scale-110"
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   onClick={() => onDelete(tx.id!)}
-                  className="text-red-500 hover:text-red-700 text-sm"
+                  className="text-red-500 hover:text-red-700 text-sm transition-transform hover:scale-110"
                 >
                   X
                 </button>
               </td>
-            </tr>
+            </motion.tr>
           ))}
         </tbody>
       </table>

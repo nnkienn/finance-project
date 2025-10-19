@@ -14,9 +14,7 @@ import lombok.Setter;
 public class UserCategoryResponse {
 	private Long id;
 	private String name;
-	
 	private String icon;
-	
 	private Long masterCategoryId;
 	private String masterCategoryName;
 	private CategoryType categoryType;

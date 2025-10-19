@@ -57,3 +57,40 @@ body {
 .animate-dropdown-out {
   animation: dropdown-out 0.12s ease-in forwards;
 }
+
+
+.perspective {
+  perspective: 1000px;
+}
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+.rotateY-180 {
+  transform: rotateY(180deg);
+}
+
+
+@keyframes pastel-glow {
+  0% {
+    box-shadow: 0 0 4px rgba(236, 72, 153, 0.08),
+      0 0 8px rgba(236, 72, 153, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(236, 72, 153, 0.18),
+      0 0 20px rgba(236, 72, 153, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 4px rgba(236, 72, 153, 0.08),
+      0 0 8px rgba(236, 72, 153, 0.05);
+  }
+}
+
+.hover-glow:hover {
+  animation: pastel-glow 1.6s ease-in-out infinite;
+}
+tbody tr td {
+  transition: background-color 0.25s ease;
+}

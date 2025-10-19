@@ -11,7 +11,7 @@ public record SavingGoalUpdateRequest(
 
     @NotNull @DecimalMin(value = "0.01", message = "Target amount must be > 0")
     BigDecimal targetAmount,
-
+    LocalDate startDate,
     LocalDate endDate,
     String description
 ) {}

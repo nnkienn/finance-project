@@ -14,34 +14,26 @@ export default function Homepage() {
   const year = now.getFullYear();
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col">
       <NavbarPrivate />
 
-      <main className="pt-24 px-4 md:px-8 lg:px-12">
-        <div className="grid grid-cols-12 gap-6">
+      {/* ✅ Centered container */}
+      <main className="flex-1 pt-24 pb-10 px-4 md:px-8 lg:px-12 max-w-[1400px] mx-auto">
+        <div className="grid grid-cols-12 gap-x-5 gap-y-6 items-start">
           {/* LEFT CARD */}
-          <div className="col-span-12 md:col-span-3">
-            <h2 className="text-lg font-semibold mb-4">My Card</h2>
+          <div className="col-span-12 md:col-span-3 space-y-3">
+            <h2 className="text-lg font-semibold mb-2">My Card</h2>
             <CardInfo
-              name="Knance"
-              number="1234 1234 1234 1234"
-              holder="OMI GUSTY"
-              expiry="06/24"
-              balance={128320}
-              up={23.12}
-              down={23.12}
-              currency="USD / US Dollar"
-              status="Active"
             />
           </div>
 
           {/* CENTER CONTENT */}
-          <div className="col-span-12 md:col-span-9 space-y-6">
+          <div className="col-span-12 md:col-span-9 flex flex-col space-y-[22px] pt-1">
             {/* Summary Cards */}
             <SummaryCards />
 
             {/* Row 1: Money Flow + My Savings */}
-            <div className="grid grid-cols-12 gap-6">
+            <div className="grid grid-cols-12 gap-5">
               <div className="col-span-12 lg:col-span-8">
                 <MoneyFlowGradientChart />
               </div>
@@ -50,23 +42,15 @@ export default function Homepage() {
               </div>
             </div>
 
-           {/* Row 2: All Expenses + History Transactions */}
-<div className="grid grid-cols-12 gap-6 items-stretch">
-  {/* All Expenses */}
-  <div className="col-span-12 lg:col-span-6">
-    <div className="h-full min-h-[320px]">
-      <ExpensesPie defaultMonth={month} defaultYear={year} />
-    </div>
-  </div>
-
-  {/* History Transactions */}
-  <div className="col-span-12 lg:col-span-6">
-    <div className="h-full min-h-[320px]">
-      <HistoryTransactions />
-    </div>
-  </div>
-</div>
-
+            {/* Row 2: All Expenses + History Transactions */}
+            <div className="grid grid-cols-12 gap-5 items-start">
+              <div className="col-span-12 lg:col-span-6">
+                <ExpensesPie defaultMonth={month} defaultYear={year} />
+              </div>
+              <div className="col-span-12 lg:col-span-6">
+                <HistoryTransactions />
+              </div>
+            </div>
           </div>
         </div>
       </main>

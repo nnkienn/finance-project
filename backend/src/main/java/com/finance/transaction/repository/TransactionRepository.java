@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.finance.auth.entity.User;
+import com.finance.category.entity.CategoryType;
 import com.finance.category.entity.UserCategory;
 import com.finance.transaction.entity.PaymentMethod;
 import com.finance.transaction.entity.Transaction;
@@ -224,5 +225,17 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
 			    WHERE t.user.id = :userId AND t.type = :type
 			""")
 	BigDecimal sumAmountByUserAndType(Long userId, TransactionType type);
+
+	@Query("""
+			    SELECT t.userCategory.name, COALESCE(SUM(t.amount), 0)
+			    FROM Transaction t
+			    WHERE t.userCategory.masterCategory.type = :type
+			      AND t.userCategory.user.id = :userId
+			      AND EXTRACT(MONTH FROM t.transactionDate) = :month
+			      AND EXTRACT(YEAR FROM t.transactionDate) = :year
+			    GROUP BY t.userCategory.name
+			""")
+	List<Object[]> sumByCategoryForUserAndMonth(@Param("type") CategoryType type, @Param("userId") Long userId,
+			@Param("month") int month, @Param("year") int year);
 
 }

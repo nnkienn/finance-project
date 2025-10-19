@@ -1,29 +1,22 @@
 "use client";
-import Image from "next/image";
 
-interface CreditCardProps {
-  name: string;
-  number: string;
-  holder: string;
-  expiry: string;
-  balance: number;
-  up: number;
-  down: number;
-  currency: string;
-  status: string;
-}
+import { useEffect } from "react";
+import { useAppDispatch } from "@/hook/useAppDispatch";
+import { useAppSelector } from "@/hook/useAppSelector";
+import { fetchAllTotals } from "@/store/slice/transactionSlice";
 
-export default function CardInfo({
-  name,
-  number,
-  holder,
-  expiry,
-  balance,
-  up,
-  down,
-  currency,
-  status,
-}: CreditCardProps) {
+export default function CardInfo() {
+  const dispatch = useAppDispatch();
+  const { totalIncome, totalExpense, totalSaving, totalsLoading } = useAppSelector(
+    (s) => s.transactions
+  );
+
+  useEffect(() => {
+    dispatch(fetchAllTotals());
+  }, [dispatch]);
+
+  const myBalance = totalIncome - totalExpense - totalSaving;
+
   return (
     <div className="flex flex-col items-start gap-4">
       {/* CREDIT CARD */}
@@ -33,7 +26,7 @@ export default function CardInfo({
 
         {/* Pattern overlay */}
         <svg
-          className="absolute inset-0 w-full h-full opacity-50"
+          className="absolute inset-0 w-full h-full opacity-40"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 400 250"
           preserveAspectRatio="none"
@@ -51,7 +44,7 @@ export default function CardInfo({
         <div className="relative flex flex-col h-full justify-between">
           {/* Top row */}
           <div className="flex items-center justify-between text-sm font-semibold">
-            <span>{name}</span>
+            <span>Knance</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -66,13 +59,13 @@ export default function CardInfo({
 
           {/* Middle */}
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide">
-            <span>{holder}</span>
-            <span>{expiry}</span>
+            <span>OMI GUSTY</span>
+            <span>06/24</span>
           </div>
 
           {/* Card number */}
           <p className="text-[18px] font-[600] tracking-[0.25em] font-mono">
-            {number}
+            1234 1234 1234 1234
           </p>
         </div>
 
@@ -93,33 +86,33 @@ export default function CardInfo({
       </div>
 
       {/* INFO BOX */}
-   <div className="bg-white rounded-2xl shadow p-5 w-[300px]">
-  {/* Balance */}
-  <div className="mb-3">
-    <span className="text-sm text-gray-500 block">Your Balance</span>
-    <div className="flex items-center gap-3">
-      <span className="font-bold text-xl">${balance.toLocaleString()}</span>
-      <span className="text-green-500 text-sm font-medium">↑ {up}%</span>
-      <span className="text-red-500 text-sm font-medium">↓ {down}%</span>
-    </div>
-  </div>
+      <div className="bg-white rounded-2xl shadow p-5 w-[300px]">
+        <div className="mb-3">
+          <span className="text-sm text-gray-500 block mb-1">Your Balance</span>
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-2xl text-gray-900">
+              {totalsLoading
+                ? "…"
+                : `$${new Intl.NumberFormat().format(myBalance)}`}
+            </span>
+          </div>
+        </div>
 
-  {/* Divider */}
-  <hr className="my-4 border-gray-200" />
+        <hr className="my-4 border-gray-200" />
 
-  {/* Currency & Status */}
-  <div className="flex justify-between text-sm">
-    <div>
-      <span className="text-gray-500 block">Currency</span>
-      <span className="font-semibold">{currency}</span>
-    </div>
-    <div>
-      <span className="text-gray-500 block">Status</span>
-      <span className="font-semibold text-green-600">{status}</span>
-    </div>
-  </div>
-</div>
-
+        <div className="flex justify-between text-sm">
+          <div>
+            <span className="text-gray-500 block">Currency</span>
+            <span className="font-semibold text-gray-700">
+              USD / US Dollar
+            </span>
+          </div>
+          <div>
+            <span className="text-gray-500 block">Status</span>
+            <span className="font-semibold text-green-600">Active</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
