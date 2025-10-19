@@ -7,13 +7,14 @@ import {
   Shuffle,
   FileText,
   Activity,
-  PiggyBank, // 🐷 thay icon mới
+  PiggyBank,
   Menu,
   X,
 } from "lucide-react";
 import SettingsMenu from "./dashboard/SettingsMenu";
 import NotificationsMenu from "./dashboard/NotificationsMenu";
 import { useState } from "react";
+import { useAppSelector } from "@/hook/useAppSelector"; // 👈 lấy user từ Redux
 
 interface TabItem {
   id: string;
@@ -28,6 +29,9 @@ export default function NavbarPrivate() {
   const [openMenu, setOpenMenu] = useState<"settings" | "notifications" | null>(
     null
   );
+
+  // 👇 lấy user từ redux
+  const { user } = useAppSelector((state) => state.auth);
 
   const tabs: TabItem[] = [
     {
@@ -51,7 +55,7 @@ export default function NavbarPrivate() {
     {
       id: "saving",
       label: "Saving",
-      icon: <PiggyBank size={16} />, // 🐷 icon heo đất tiết kiệm
+      icon: <PiggyBank size={16} />,
       link: "/savings",
     },
     {
@@ -89,7 +93,6 @@ export default function NavbarPrivate() {
     );
   };
 
-  // 👇 giữ nguyên phần còn lại
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white shadow-sm">
       <div className="max-w-7xl mx-auto w-full h-full flex items-center justify-between px-4 md:px-8">
@@ -125,17 +128,22 @@ export default function NavbarPrivate() {
             EN
           </span>
 
+          {/* 🔔 Notification Bell */}
           <div className="relative">
-            <NotificationsMenu
-              open={openMenu === "notifications"}
-              onToggle={() =>
-                setOpenMenu(
-                  openMenu === "notifications" ? null : "notifications"
-                )
-              }
-            />
+            {user && (
+              <NotificationsMenu
+                open={openMenu === "notifications"}
+                onToggle={() =>
+                  setOpenMenu(
+                    openMenu === "notifications" ? null : "notifications"
+                  )
+                }
+                userId={user.id} // 👈 truyền userId
+              />
+            )}
           </div>
 
+          {/* ⚙️ Settings */}
           <div className="relative">
             <SettingsMenu
               open={openMenu === "settings"}
@@ -145,9 +153,10 @@ export default function NavbarPrivate() {
             />
           </div>
 
+          {/* Avatar */}
           <Link href="/profile">
             <img
-              src="/images/avatar.png"
+              src={user?.avatarUrl || "/images/avatar.png"}
               alt="User"
               className="w-9 h-9 rounded-full border object-cover cursor-pointer hover:ring-2 hover:ring-pink-400 transition"
             />
@@ -156,17 +165,21 @@ export default function NavbarPrivate() {
 
         {/* Mobile right */}
         <div className="flex md:hidden items-center gap-3">
-          <div className="relative">
-            <NotificationsMenu
-              mobile
-              open={openMenu === "notifications"}
-              onToggle={() =>
-                setOpenMenu(
-                  openMenu === "notifications" ? null : "notifications"
-                )
-              }
-            />
-          </div>
+          {user && (
+            <div className="relative">
+              <NotificationsMenu
+                mobile
+                open={openMenu === "notifications"}
+                onToggle={() =>
+                  setOpenMenu(
+                    openMenu === "notifications" ? null : "notifications"
+                  )
+                }
+                userId={user.id} // 👈 truyền luôn vào mobile
+              />
+            </div>
+          )}
+
           <div className="relative">
             <SettingsMenu
               open={openMenu === "settings"}
@@ -175,6 +188,7 @@ export default function NavbarPrivate() {
               }
             />
           </div>
+
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 text-gray-700"

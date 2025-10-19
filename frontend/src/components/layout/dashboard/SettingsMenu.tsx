@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useAppDispatch } from "@/hook/useAppDispatch";
 import { logout } from "@/store/slice/authSlice";
-import { User, Bell, Palette, CreditCard, LogOut } from "lucide-react";
+import { User, Palette, CreditCard, LogOut } from "lucide-react";
 
 export default function SettingsMenu({
   open,
@@ -84,10 +84,6 @@ export default function SettingsMenu({
               >
                 <User size={16} /> Profile
               </Link>
-            </li>
-
-            <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-pink-50 hover:text-pink-600 cursor-pointer transition">
-              <Bell size={16} /> Notifications
             </li>
 
             <li className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-pink-50 hover:text-pink-600 cursor-pointer transition">

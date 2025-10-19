@@ -6,6 +6,8 @@ import transactionReducer from "./slice/transactionSlice";
 import savingReducer from "./slice/savingSlice"; // 👈 thêm slice mới
 import savingAnalyticsReducer from "./slice/savingAnalyticsSlice";
 import savingReportReducer from "./slice/savingReportSlice";
+import notificationReducer from "./slice/notificationSlice"; 
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -15,6 +17,7 @@ export const store = configureStore({
     saving: savingReducer,
     savingAnalytics: savingAnalyticsReducer,
     savingReport: savingReportReducer,
+    notifications: notificationReducer
 
   },
 });
