@@ -206,9 +206,9 @@ function SmoothSection({
                 </ResponsiveContainer>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <p className="text-[12px] text-gray-400">Tổng</p>
+                  <p className="text-[12px] text-gray-400">Sum</p>
                   <p className="text-[14px] font-semibold text-gray-800 tabular-nums">
-                    {total.toLocaleString("vi-VN")}₫
+                    {total.toLocaleString("vi-VN")}
                   </p>
                 </div>
               </div>
@@ -230,7 +230,7 @@ function SmoothSection({
                       <span className="truncate font-medium">{item.name}</span>
                     </div>
                     <span className="font-semibold text-gray-800 tabular-nums">
-                      {item.value.toLocaleString("vi-VN")}đ
+                      {item.value.toLocaleString("vi-VN")}$
                     </span>
                   </motion.div>
                 ))}

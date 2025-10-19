@@ -102,25 +102,25 @@ export default function NotificationsMenu({
               </p>
             ) : (
               <ul className="flex flex-col gap-2 text-sm text-gray-600">
-                {notifications.map((n) => (
+                {notifications.map((n, idx) => (
                   <li
-                    key={n.id}
-                    onClick={() => dispatch(markNotificationRead(n.id))} // 👈 mark read
+                    key={`${n.id}-${idx}`} // ✅ unique key
+                    onClick={() => dispatch(markNotificationRead(n.id))}
                     className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition ${
-                      n.isRead ? "hover:bg-gray-50" : "bg-purple-50"
+                      n.isRead
+                        ? "hover:bg-gray-50"
+                        : "bg-purple-50 border border-purple-100"
                     }`}
                   >
                     {renderIcon(n.type)}
                     <div>
-                      <p className="font-medium">{n.title}</p>
-                      <span className="text-xs text-gray-400">{n.body}</span>
+                      <p className="font-medium text-gray-800">{n.title}</p>
+                      <span className="text-xs text-gray-500">{n.body}</span>
                     </div>
                   </li>
                 ))}
               </ul>
             )}
-
-  
           </div>
         </div>
       )}
@@ -146,17 +146,19 @@ export default function NotificationsMenu({
               </p>
             ) : (
               <ul className="flex flex-col gap-3">
-                {notifications.map((n) => (
+                {notifications.map((n, idx) => (
                   <li
-                    key={n.id}
+                    key={`${n.id}-${idx}`} // ✅ fix duplicate key
                     onClick={() => dispatch(markNotificationRead(n.id))}
                     className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
-                      n.isRead ? "hover:bg-gray-50" : "bg-purple-50 border-purple-100"
+                      n.isRead
+                        ? "hover:bg-gray-50"
+                        : "bg-purple-50 border-purple-100"
                     }`}
                   >
                     {renderIcon(n.type)}
                     <div>
-                      <p className="font-medium">{n.title}</p>
+                      <p className="font-medium text-gray-800">{n.title}</p>
                       <span className="text-xs text-gray-500">{n.body}</span>
                     </div>
                   </li>

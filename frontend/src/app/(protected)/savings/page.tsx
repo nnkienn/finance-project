@@ -168,12 +168,7 @@ export default function SavingsPage() {
           {/* CENTER */}
           <div className="col-span-12 md:col-span-6 space-y-6">
             {/* === 4 SUMMARY CARDS === */}
-            <SavingSummaryGrid
-              totalSaved={summary?.totalSaved}
-              totalGoals={summary?.totalGoals}
-              achieved={summary?.achieved}
-              active={summary?.active}
-            />
+            <SavingSummaryGrid/>
 
             {/* === SAVING GOALS HEADER === */}
             <div className="bg-white rounded-2xl shadow p-6 flex items-center justify-between">

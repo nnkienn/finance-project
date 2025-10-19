@@ -1,5 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { NotificationService, NotificationItem } from "@/service/notificationService";
+import {
+  NotificationService,
+  NotificationItem,
+} from "@/service/notificationService";
 
 interface NotificationState {
   items: NotificationItem[];
@@ -20,7 +23,11 @@ export const fetchNotifications = createAsyncThunk(
   "notifications/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      return await NotificationService.getAll();
+      const data = await NotificationService.getAll();
+      // ✅ sort giảm dần theo createdAt
+      return data.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     } catch (err: any) {
       return rejectWithValue(err.message || "Failed to load notifications");
     }
@@ -57,15 +64,23 @@ const notificationSlice = createSlice({
   reducers: {
     // 🔔 thêm noti mới từ WebSocket
     addNotification: (state, action: PayloadAction<NotificationItem>) => {
-      state.items.unshift(action.payload);
-      if (!action.payload.isRead) state.unreadCount += 1;
+      const exists = state.items.some((n) => n.id === action.payload.id);
+      if (!exists) {
+        state.items.unshift(action.payload);
+        if (!action.payload.isRead) state.unreadCount += 1;
+
+        // ✅ giữ danh sách không quá dài (giới hạn 50 items)
+        if (state.items.length > 50) state.items.pop();
+      }
     },
+
     // 🔄 clear toàn bộ (khi logout)
     clearNotifications: (state) => {
       state.items = [];
       state.unreadCount = 0;
     },
   },
+
   extraReducers: (builder) => {
     builder
       // FETCH

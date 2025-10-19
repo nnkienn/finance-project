@@ -18,14 +18,12 @@ import {
   fetchTransactionsPaged,
 } from "@/store/slice/transactionSlice";
 import { fetchUserCategories } from "@/store/slice/userCategorySlice";
-
-// saving slice
 import { fetchSavings } from "@/store/slice/savingSlice";
 
 import { Transaction } from "@/type/transaction";
 import { transactionExportService } from "@/service/transactionExportService";
 
-export default function Homepage() {
+export default function TransactionPage() {
   const dispatch = useAppDispatch();
 
   const {
@@ -36,33 +34,22 @@ export default function Homepage() {
     totalPages,
     size,
   } = useAppSelector((state) => state.transactions);
-
   const { items: categories } = useAppSelector((state) => state.userCategories);
-
-  // get savings from saving slice
   const savings = useAppSelector((state) => state.saving.items);
 
   const [showModal, setShowModal] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
-
-  // filter state để nhớ khi đổi trang
-  const [filters, setFilters] = useState<{
-    startDate: string | null;
-    endDate: string | null;
-    type: string | null;
-    categoryId: number | null;
-  }>({
-    startDate: null,
-    endDate: null,
-    type: null,
-    categoryId: null,
+  const [filters, setFilters] = useState({
+    startDate: null as string | null,
+    endDate: null as string | null,
+    type: null as string | null,
+    categoryId: null as number | null,
   });
 
+  // ✅ Load dữ liệu khi mở trang
   useEffect(() => {
-    // load categories + savings + first page of transactions
     dispatch(fetchUserCategories());
     dispatch(fetchSavings());
-
     dispatch(
       fetchTransactionsPaged({
         page: 0,
@@ -72,14 +59,13 @@ export default function Homepage() {
     );
   }, [dispatch, size]);
 
+  // ✅ Export
   const handleExport = async (type: "csv" | "pdf") => {
     try {
       const blob =
         type === "csv"
           ? await transactionExportService.exportCsv()
           : await transactionExportService.exportPdf();
-
-      // Tạo link tải file
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement("a");
       link.href = url;
@@ -93,6 +79,7 @@ export default function Homepage() {
     }
   };
 
+  // ✅ Create / Update
   const handleSave = async (payload: Omit<Transaction, "id">) => {
     try {
       if (editTx) {
@@ -105,10 +92,11 @@ export default function Homepage() {
       setShowModal(false);
     } catch (err) {
       console.error("Save transaction failed:", err);
-      alert("❌ Failed to save transaction. Check console for details.");
+      alert("❌ Failed to save transaction.");
     }
   };
 
+  // ✅ Delete
   const handleDelete = async (id: number) => {
     if (confirm("Delete this transaction?")) {
       try {
@@ -116,18 +104,13 @@ export default function Homepage() {
         alert("🗑️ Transaction deleted successfully!");
       } catch (err) {
         console.error("Delete transaction failed:", err);
-        alert("❌ Failed to delete transaction. Check console for details.");
+        alert("❌ Failed to delete transaction.");
       }
     }
   };
 
-  // ✅ filter handler (convert null → undefined)
-  const handleFilter = (f: {
-    startDate: string | null;
-    endDate: string | null;
-    type: string | null;
-    categoryId: number | null;
-  }) => {
+  // ✅ Filter
+  const handleFilter = (f: typeof filters) => {
     setFilters(f);
     dispatch(
       fetchTransactionsPaged({
@@ -142,7 +125,7 @@ export default function Homepage() {
     );
   };
 
-  // ✅ đổi trang (giữ filter cũ)
+  // ✅ Pagination
   const handlePageChange = (newPage: number) => {
     dispatch(
       fetchTransactionsPaged({
@@ -158,26 +141,26 @@ export default function Homepage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col">
       <NavbarPrivate />
 
-      <main className="pt-24 px-4 md:px-8 lg:px-12">
-        <div className="grid grid-cols-12 gap-6">
-          {/* LEFT: My Card */}
+      <main className="flex-1 pt-24 pb-10 px-4 md:px-8 lg:px-12 max-w-[1400px] mx-auto">
+        <div className="grid grid-cols-12 gap-x-5 gap-y-6 items-start">
+          {/* LEFT CARD */}
           <div className="col-span-12 md:col-span-3">
-            <h2 className="text-lg font-semibold mb-4">My Card</h2>
-            <CardInfo/>
+            <h2 className="text-lg font-semibold mb-3">My Card</h2>
+            <CardInfo />
           </div>
 
-          {/* CENTER */}
-          <div className="col-span-12 md:col-span-6 space-y-6">
+          {/* CENTER CONTENT */}
+          <div className="col-span-12 md:col-span-9 lg:col-span-6 flex flex-col space-y-6 pt-1">
             {/* Filter */}
             <div className="bg-white rounded-2xl shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Search & Filter</h2>
               <TransactionSearchFilter categories={categories} onApply={handleFilter} />
             </div>
 
-            {/* Transaction Section */}
+            {/* Transaction List */}
             <div className="bg-white rounded-2xl shadow p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Transaction List</h2>
@@ -190,13 +173,15 @@ export default function Homepage() {
                     }}
                     className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-medium hover:bg-pink-600 transition"
                   >
-                    + Create Transaction
+                    + Create
                   </button>
                 </div>
               </div>
 
-              {loading && <p className="text-gray-500">Loading...</p>}
-              {error && <p className="text-red-500">{error}</p>}
+              {loading && (
+                <p className="text-gray-500 text-sm text-center">Loading...</p>
+              )}
+              {error && <p className="text-red-500 text-sm">{error}</p>}
 
               <TransactionTable
                 transactions={transactions}
@@ -208,43 +193,45 @@ export default function Homepage() {
               />
 
               {/* Pagination */}
-              <div className="flex justify-center items-center gap-2 mt-4">
-                <button
-                  disabled={page <= 0}
-                  onClick={() => handlePageChange(page - 1)}
-                  className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-                >
-                  Prev
-                </button>
-                <span className="text-sm text-gray-600">
-                  Page {page + 1} of {totalPages}
-                </span>
-                <button
-                  disabled={page >= totalPages - 1}
-                  onClick={() => handlePageChange(page + 1)}
-                  className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-6">
+                  <button
+                    disabled={page <= 0}
+                    onClick={() => handlePageChange(page - 1)}
+                    className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-sm"
+                  >
+                    Prev
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    Page {page + 1} of {totalPages}
+                  </span>
+                  <button
+                    disabled={page >= totalPages - 1}
+                    onClick={() => handlePageChange(page + 1)}
+                    className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-sm"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* RIGHT */}
-          <div className="col-span-12 md:col-span-3">
+          {/* RIGHT SIDEBAR */}
+          <div className="hidden lg:block lg:col-span-3">
             <RightSidebar />
           </div>
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Transaction Modal */}
       <TransactionModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSave={handleSave}
         initialData={editTx}
         categories={categories}
-        savings={savings} // <-- truyền danh sách saving goals vào modal
+        savings={savings}
       />
     </div>
   );
