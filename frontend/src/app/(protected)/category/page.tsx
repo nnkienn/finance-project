@@ -45,17 +45,7 @@ export default function Homepage() {
           {/* LEFT */}
           <div className="md:col-span-3">
             <h2 className="text-lg font-semibold mb-4">My Card</h2>
-            <CardInfo
-              name="Knance"
-              number="1234 1234 1234 1234"
-              holder="OMI GUSTY"
-              expiry="06/24"
-              balance={128320}
-              up={23.12}
-              down={23.12}
-              currency="USD / US Dollar"
-              status="Active"
-            />
+            <CardInfo/>
           </div>
 
           {/* CENTER */}

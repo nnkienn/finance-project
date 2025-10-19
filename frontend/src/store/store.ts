@@ -6,18 +6,21 @@ import transactionReducer from "./slice/transactionSlice";
 import savingReducer from "./slice/savingSlice"; // 👈 thêm slice mới
 import savingAnalyticsReducer from "./slice/savingAnalyticsSlice";
 import savingReportReducer from "./slice/savingReportSlice";
-import notificationReducer from "./slice/notificationSlice"; 
+import notificationReducer from "./slice/notificationSlice";
+import activityReducer from "./slice/activitySlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    masterCategories: masterCategoryReducer, 
+    masterCategories: masterCategoryReducer,
     userCategories: userCategoryReducer,
     transactions: transactionReducer,
     saving: savingReducer,
     savingAnalytics: savingAnalyticsReducer,
     savingReport: savingReportReducer,
-    notifications: notificationReducer
+    notifications: notificationReducer,
+    activity: activityReducer,
+
 
   },
 });

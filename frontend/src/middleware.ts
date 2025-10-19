@@ -12,7 +12,9 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/category") ||
     pathname.startsWith("/transaction") ||
     pathname.startsWith("/savings") ||
-    pathname.startsWith("/profile");
+    pathname.startsWith("/profile")
+    pathname.startsWith("/activity")
+    ;
 
   // chưa login mà vào protected route
   if (!at && isProtected) {
@@ -40,5 +42,6 @@ export const config = {
     "/transaction/:path*",
     "/savings/:path*",
     "/profile/:path*",
+    "/activity/:path*",
   ],
 };
