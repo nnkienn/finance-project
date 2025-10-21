@@ -8,16 +8,19 @@ import com.finance.transaction.entity.TransactionType;
 
 import lombok.*;
 
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TransactionEventDTO {
-    private Long transactionId;
-    private Long userId;
-    private TransactionType type;
-    private PaymentMethod method;
-    private BigDecimal amount;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime transactionDate;
-    private String note;
-    private Long userCategoryId;
-    private Long savingGoalId;
+	private Long transactionId;
+	private Long userId;
+	private TransactionType type;
+	private PaymentMethod method;
+	private BigDecimal amount;
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+	private LocalDateTime transactionDate;
+	private String note;
+	private Long userCategoryId;
+	private Long savingGoalId;
 }

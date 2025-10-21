@@ -70,7 +70,23 @@ export const AuthService = {
     const res = await api.patch("/me", data);
     return res.data;
   },
+
+  // 🖼️ Upload avatar (trả về MeResponse)
+  uploadAvatar: async (file: File): Promise<MeResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await api.post<MeResponse>("/upload/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return res.data;
+  },
+
 };
+
+
+
 
 // ⚠️ Helper — dùng để bắt lỗi Axios gọn gàng
 function handleError(err: unknown, fallbackMsg: string): never {

@@ -21,7 +21,7 @@ export const loginUser = createAsyncThunk(
   async (data: { email: string; password: string }, { rejectWithValue }) => {
     try {
       const res = await AuthService.login(data.email, data.password);
-      return res; // AuthResponse
+      return res;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || error.message || "Login failed"
@@ -31,18 +31,15 @@ export const loginUser = createAsyncThunk(
 );
 
 // 👤 FETCH ME
-export const meUser = createAsyncThunk(
-  "auth/me",
-  async (_, { rejectWithValue }) => {
-    try {
-      return await AuthService.me();
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Get user failed"
-      );
-    }
+export const meUser = createAsyncThunk("auth/me", async (_, { rejectWithValue }) => {
+  try {
+    return await AuthService.me();
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || error.message || "Get user failed"
+    );
   }
-);
+});
 
 // 📝 REGISTER
 export const registerUser = createAsyncThunk(
@@ -75,7 +72,7 @@ export const refreshAccessToken = createAsyncThunk(
   }
 );
 
-// 🧩 UPDATE PROFILE (email optional)
+// 🧩 UPDATE PROFILE
 export const updateProfile = createAsyncThunk(
   "auth/updateProfile",
   async (
@@ -104,6 +101,20 @@ export const changePassword = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || error.message || "Change password failed"
+      );
+    }
+  }
+);
+
+// 🖼️ UPLOAD AVATAR
+export const uploadAvatar = createAsyncThunk(
+  "auth/uploadAvatar",
+  async (file: File, { rejectWithValue }) => {
+    try {
+      return await AuthService.uploadAvatar(file);
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Upload avatar failed"
       );
     }
   }
@@ -170,7 +181,6 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action: any) => {
         state.loading = false;
         state.error = null;
-
         if (action.payload?.accessToken) {
           state.accessToken = action.payload.accessToken;
           document.cookie = `accessToken=${state.accessToken}; path=/;`;
@@ -185,7 +195,7 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // REFRESH
+      // REFRESH TOKEN
       .addCase(
         refreshAccessToken.fulfilled,
         (state, action: PayloadAction<AuthResponse>) => {
@@ -212,6 +222,15 @@ const authSlice = createSlice({
       // CHANGE PASSWORD
       .addCase(changePassword.fulfilled, (state) => {
         console.log("✅ Password changed successfully");
+      })
+
+      // 🖼️ UPLOAD AVATAR
+      .addCase(uploadAvatar.fulfilled, (state, action: PayloadAction<MeResponse>) => {
+        state.user = action.payload;
+        localStorage.setItem(
+          "auth",
+          JSON.stringify({ user: state.user, accessToken: state.accessToken })
+        );
       });
   },
 });

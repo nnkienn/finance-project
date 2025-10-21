@@ -78,7 +78,7 @@ export default function SettingsMenu({
           <ul className="flex flex-col gap-1 text-sm font-medium text-gray-600">
             <li>
               <Link
-                href="/settings"
+                href="/profile"
                 onClick={onToggle}
                 className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-pink-50 hover:text-pink-600 transition"
               >

@@ -20,66 +20,50 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SavingGoalExpirationScheduler {
 
-    private final SavingGoalRepository savingGoalRepository;
-    private final NotificationEventPublisher notificationEventPublisher;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+	private final SavingGoalRepository savingGoalRepository;
+	private final NotificationEventPublisher notificationEventPublisher;
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * Chạy mỗi sáng lúc 7:00 để check goal hết hạn
-     */
-    @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Ho_Chi_Minh")
-    public void checkExpiredGoals() {
-        LocalDate today = LocalDate.now();
+	/**
+	 * Chạy mỗi sáng lúc 7:00 để check goal hết hạn
+	 */
+	@Scheduled(cron = "0 0 7 * * *", zone = "Asia/Ho_Chi_Minh")
+	public void checkExpiredGoals() {
+		LocalDate today = LocalDate.now();
 
-        // Lấy tất cả goal đang active mà endDate < hôm nay
-        List<SavingGoal> expiredGoals = savingGoalRepository.findAll().stream()
-                .filter(g -> g.getStatus() == SavingGoalStatus.IN_PROGRESS
-                        && g.getEndDate() != null
-                        && g.getEndDate().isBefore(today))
-                .toList();
+		// Lấy tất cả goal đang active mà endDate < hôm nay
+		List<SavingGoal> expiredGoals = savingGoalRepository.findAll().stream()
+				.filter(g -> g.getStatus() == SavingGoalStatus.IN_PROGRESS && g.getEndDate() != null
+						&& g.getEndDate().isBefore(today))
+				.toList();
 
-        if (expiredGoals.isEmpty()) return;
+		if (expiredGoals.isEmpty())
+			return;
 
-        log.info("🔍 Found {} expired saving goals", expiredGoals.size());
+		log.info("🔍 Found {} expired saving goals", expiredGoals.size());
 
-        for (SavingGoal goal : expiredGoals) {
-            try {
-                var payload = objectMapper.valueToTree(Map.of(
-                        "goalId", goal.getId(),
-                        "goalName", goal.getName(),
-                        "endDate", goal.getEndDate().toString()
-                ));
+		for (SavingGoal goal : expiredGoals) {
+			try {
+				var payload = objectMapper.valueToTree(Map.of("goalId", goal.getId(), "goalName", goal.getName(),
+						"endDate", goal.getEndDate().toString()));
 
-                // Gửi EMAIL
-                notificationEventPublisher.publish(
-                        NotificationEventDTO.builder()
-                                .userId(goal.getUser().getId())
-                                .type("saving.expired")
-                                .title("Mục tiêu tiết kiệm đã hết hạn")
-                                .body("Mục tiêu \"" + goal.getName() + "\" đã hết hạn vào ngày " + goal.getEndDate())
-                                .payload(payload)
-                                .channel("EMAIL")
-                                .build()
-                );
+				// Gửi EMAIL
+				notificationEventPublisher.publish(NotificationEventDTO.builder().userId(goal.getUser().getId())
+						.type("saving.expired").title("Mục tiêu tiết kiệm đã hết hạn")
+						.body("Mục tiêu \"" + goal.getName() + "\" đã hết hạn vào ngày " + goal.getEndDate())
+						.payload(payload).channel("EMAIL").build());
 
-                // Gửi IN_APP
-                notificationEventPublisher.publish(
-                        NotificationEventDTO.builder()
-                                .userId(goal.getUser().getId())
-                                .type("saving.expired")
-                                .title("Mục tiêu \"" + goal.getName() + "\" đã hết hạn")
-                                .body("Hãy xem lại tiến độ tiết kiệm của bạn.")
-                                .payload(payload)
-                                .channel("IN_APP")
-                                .build()
-                );
+				// Gửi IN_APP
+				notificationEventPublisher.publish(NotificationEventDTO.builder().userId(goal.getUser().getId())
+						.type("saving.expired").title("Mục tiêu \"" + goal.getName() + "\" đã hết hạn")
+						.body("Hãy xem lại tiến độ tiết kiệm của bạn.").payload(payload).channel("IN_APP").build());
 
-                goal.setStatus(SavingGoalStatus.CANCELLED);
-                savingGoalRepository.save(goal);
+				goal.setStatus(SavingGoalStatus.CANCELLED);
+				savingGoalRepository.save(goal);
 
-            } catch (Exception e) {
-                log.error("❌ Failed to process expired goal id={} - {}", goal.getId(), e.getMessage(), e);
-            }
-        }
-    }
+			} catch (Exception e) {
+				log.error("❌ Failed to process expired goal id={} - {}", goal.getId(), e.getMessage(), e);
+			}
+		}
+	}
 }

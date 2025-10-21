@@ -1,6 +1,7 @@
 package com.finance.notification.kafka;
 
 import com.finance.notification.repository.NotificationRepository;
+import com.finance.notification.websocket.NotificationSocketController;
 import com.finance.notification.Notification;
 import com.finance.notification.NotificationStatus;
 import com.finance.notification.kafka.dto.NotificationEventDTO;
@@ -21,6 +22,8 @@ public class NotificationEventListener {
     private final NotificationSenderFactory senderFactory;
     private final NotificationRepository repo;
     private final UserRepository userRepo;
+    private final NotificationSocketController socketController;
+
 
     @KafkaListener(
         topics = "notification.send",
@@ -62,6 +65,9 @@ public class NotificationEventListener {
             notif.setStatus(NotificationStatus.SENT);
             notif.setSentAt(Instant.now());
             log.info("✅ Notification sent successfully to user={} via {}", user.getEmail(), event.getChannel());
+            if ("IN_APP".equalsIgnoreCase(event.getChannel())) {
+                socketController.pushNotification(notif);
+            }
 
         } catch (Exception ex) {
             notif.setAttempts(notif.getAttempts() + 1);

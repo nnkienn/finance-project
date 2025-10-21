@@ -1,6 +1,5 @@
 package com.finance.outbox.service;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.finance.outbox.OutboxEvent;
 import com.finance.outbox.repository.OutboxEventRepository;
@@ -18,47 +17,46 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OutboxPublisher {
 
-    private final OutboxEventRepository outboxRepo;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+	private final OutboxEventRepository outboxRepo;
+	private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    private static final int MAX_ATTEMPTS = 10;
+	private static final int MAX_ATTEMPTS = 10;
 
-    /**
-     * Quét outbox mỗi 2s: lấy PENDING/RETRY, claim -> gửi -> cập nhật.
-     */
-    @Scheduled(fixedDelay = 2000)
-    @Transactional
-    public void publishPending() {
-        List<OutboxEvent> events =
-                outboxRepo.findTop100ByStatusInAndAttemptsLessThanOrderByCreatedAtAsc(
-                        List.of("PENDING", "RETRY"), MAX_ATTEMPTS);
+	/**
+	 * Quét outbox mỗi 2s: lấy PENDING/RETRY, claim -> gửi -> cập nhật.
+	 */
+	@Scheduled(fixedDelay = 2000)
+	@Transactional
+	public void publishPending() {
+		List<OutboxEvent> events = outboxRepo
+				.findTop100ByStatusInAndAttemptsLessThanOrderByCreatedAtAsc(List.of("PENDING", "RETRY"), MAX_ATTEMPTS);
 
-        for (OutboxEvent ev : events) {
-            // Claim để tránh 2 instance xử lý cùng 1 bản ghi
-            int changed = outboxRepo.tryChangeStatus(ev.getId(), ev.getStatus(), "SENDING");
-            if (changed == 0) {
-                continue; // đã bị instance khác claim
-            }
+		for (OutboxEvent ev : events) {
+			// Claim để tránh 2 instance xử lý cùng 1 bản ghi
+			int changed = outboxRepo.tryChangeStatus(ev.getId(), ev.getStatus(), "SENDING");
+			if (changed == 0) {
+				continue; // đã bị instance khác claim
+			}
 
-            try {
-                String topic = ev.getEventType();   // ví dụ: "transaction.created"
-                String key   = ev.getAggregateId(); // giữ order theo aggregate
+			try {
+				String topic = ev.getEventType(); // ví dụ: "transaction.created"
+				String key = ev.getAggregateId(); // giữ order theo aggregate
 
-                JsonNode payload = ev.getPayload(); // JsonNode (đã map JSONB)
-                // JsonSerializer của Spring Kafka serialize được JsonNode
-                kafkaTemplate.send(topic, key, payload).get(); // chờ kết quả để biết có lỗi
+				JsonNode payload = ev.getPayload(); // JsonNode (đã map JSONB)
+				// JsonSerializer của Spring Kafka serialize được JsonNode
+				kafkaTemplate.send(topic, key, payload).get(); // chờ kết quả để biết có lỗi
 
-                ev.setStatus("SUCCESS");
-                outboxRepo.save(ev);
-                System.out.println(String.format("✅ Published outbox id=%s topic=%s key=%s",
-                        String.valueOf(ev.getId()), topic, key));
-            } catch (Exception ex) {
-                ev.setAttempts(ev.getAttempts() + 1);
-                ev.setStatus(ev.getAttempts() >= MAX_ATTEMPTS ? "FAILED" : "RETRY");
-                outboxRepo.save(ev);
-                log.warn("⚠️ Publish failed id={} attempts={} -> status={} err={}",
-                        ev.getId(), ev.getAttempts(), ev.getStatus(), ex.getMessage());
-            }
-        }
-    }
+				ev.setStatus("SUCCESS");
+				outboxRepo.save(ev);
+				System.out.println(String.format("✅ Published outbox id=%s topic=%s key=%s", String.valueOf(ev.getId()),
+						topic, key));
+			} catch (Exception ex) {
+				ev.setAttempts(ev.getAttempts() + 1);
+				ev.setStatus(ev.getAttempts() >= MAX_ATTEMPTS ? "FAILED" : "RETRY");
+				outboxRepo.save(ev);
+				log.warn("⚠️ Publish failed id={} attempts={} -> status={} err={}", ev.getId(), ev.getAttempts(),
+						ev.getStatus(), ex.getMessage());
+			}
+		}
+	}
 }

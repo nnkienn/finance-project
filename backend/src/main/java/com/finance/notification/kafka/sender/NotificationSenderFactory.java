@@ -9,12 +9,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationSenderFactory {
 
-    private final List<NotificationSender> senders;
+	private final List<NotificationSender> senders;
 
-    public NotificationSender getSender(String channel) {
-        return senders.stream()
-                .filter(s -> s.getChannel().equalsIgnoreCase(channel))
-                .findFirst()
-                .orElse(null);
-    }
+	public NotificationSender getSender(String channel) {
+		return senders.stream().filter(s -> s.getChannel().equalsIgnoreCase(channel)).findFirst().orElse(null);
+	}
 }

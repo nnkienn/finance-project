@@ -72,15 +72,14 @@ public class SavingGoalService {
 
 	@Transactional
 	public void delete(long id) {
-	    SavingGoal goal = requireOwnedGoal(id);
+		SavingGoal goal = requireOwnedGoal(id);
 
-	    if (goal.getHistories() != null && !goal.getHistories().isEmpty()) {
-	        throw new SavingGoalDeleteException("Cannot delete a saving goal that has history records.");
-	    }
+		if (goal.getHistories() != null && !goal.getHistories().isEmpty()) {
+			throw new SavingGoalDeleteException("Cannot delete a saving goal that has history records.");
+		}
 
-	    savingGoalRepository.delete(goal);
+		savingGoalRepository.delete(goal);
 	}
-
 
 	@Transactional
 	public void updateProgressFromTransaction(Transaction tx) {

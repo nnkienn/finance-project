@@ -80,7 +80,9 @@ public class SecurityConfig {
             	    .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
             	    .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
             	    .requestMatchers(HttpMethod.GET, "/auth/verify").permitAll()   // ✅ thêm dòng này
-
+                    // ✅ Cho phép WebSocket và SockJS handshake mà không cần login
+                    .requestMatchers("/ws/**").permitAll()
+                    .requestMatchers("/actuator/**").permitAll()
             	    // ❌ bỏ "/auth/**"
             	    .requestMatchers("/h2-console/**", "/error").permitAll()
             	    .requestMatchers(HttpMethod.GET, "/").permitAll()

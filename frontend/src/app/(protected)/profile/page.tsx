@@ -1,8 +1,9 @@
 "use client";
+
 import NavbarPrivate from "@/components/layout/NavbarPrivate";
 import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";
-import { changePassword, updateProfile } from "@/store/slice/authSlice";
+import { changePassword, updateProfile, uploadAvatar } from "@/store/slice/authSlice";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -10,7 +11,7 @@ export default function SettingsPage() {
   const dispatch = useAppDispatch();
   const { user, loading } = useAppSelector((state) => state.auth);
 
-  const [avatar, setAvatar] = useState<string | null>(user?.avatarUrl || null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl || null);
   const [fullName, setFullName] = useState<string>(user?.fullName || "");
   const [accountError, setAccountError] = useState<string>("");
 
@@ -21,13 +22,22 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  // 🖼️ Chọn ảnh
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 🖼️ Chọn & upload ảnh
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setAvatar(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Hiển thị preview trước
+    const reader = new FileReader();
+    reader.onloadend = () => setAvatarPreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      await dispatch(uploadAvatar(file)).unwrap();
+      alert("✅ Avatar updated successfully!");
+    } catch (err: any) {
+      console.error("❌ Upload failed:", err);
+      alert(err || "Failed to upload avatar.");
     }
   };
 
@@ -41,7 +51,7 @@ export default function SettingsPage() {
 
     setAccountError("");
     try {
-      await dispatch(updateProfile({ fullName, avatarUrl: avatar || undefined })).unwrap();
+      await dispatch(updateProfile({ fullName })).unwrap();
       alert("✅ Profile updated successfully!");
     } catch (err: any) {
       setAccountError(err || "Failed to update profile.");
@@ -91,7 +101,7 @@ export default function SettingsPage() {
         >
           <div className="relative w-32 h-32 mx-auto mb-5">
             <img
-              src={avatar || "/default-avatar.png"}
+              src={avatarPreview || "/default-avatar.png"}
               alt="Avatar"
               className="w-32 h-32 rounded-full object-cover border-4 border-pink-400 shadow-md"
             />
@@ -101,7 +111,13 @@ export default function SettingsPage() {
             >
               Change
             </label>
-            <input id="avatar" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            <input
+              id="avatar"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </div>
 
           <h2 className="text-xl font-semibold mb-1">{fullName || "Your Name"}</h2>
