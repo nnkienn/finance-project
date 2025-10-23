@@ -1,39 +1,40 @@
-# ---------- Base ----------
-FROM node:20-alpine AS base
+# ---------- deps ----------
+FROM node:20-alpine AS deps
 WORKDIR /app
-
-
-# ---------- Dev ----------
-FROM base AS dev
-ENV NODE_ENV=development
-COPY package*.json ./
-RUN npm install
-COPY . .
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
-
-
-# ---------- Prod deps ----------
-FROM base AS deps
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
-
-# ---------- Builder ----------
-FROM base AS builder
-ENV NEXT_TELEMETRY_DISABLED=1
+# ---------- build ----------
+FROM node:20-alpine AS builder
+WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Chọn file env để nhúng vào build (NEXT_PUBLIC_* sẽ được embed)
+# Mặc định dùng .env.prod; có thể override bằng --build-arg ENV_FILE=.env.dev
+ARG ENV_FILE=.env.prod
+RUN if [ -f "$ENV_FILE" ]; then cp "$ENV_FILE" .env.production; fi
+
+# Build Next (đã có output: 'standalone' trong next.config.ts)
 RUN npm run build
 
-
-# ---------- Runner ----------
-FROM node:20-alpine AS prod
+# ---------- runtime ----------
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-# Next.js standalone output
+ENV PORT=3000
+
+# (nếu dùng next/image với sharp, cần libc6-compat trên Alpine)
+RUN apk add --no-cache libc6-compat
+
+# Copy đúng layout standalone
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
+
+# User không phải root
+RUN addgroup -S nodejs -g 1001 && adduser -S nextjs -u 1001
+USER nextjs
+
 EXPOSE 3000
 CMD ["node", "server.js"]

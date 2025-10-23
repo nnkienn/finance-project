@@ -1,10 +1,14 @@
+# --- Docs / help ---
 HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 
-### STS ###
+# --- Maven / build outputs ---
+target/
+**/target/
+build/
+**/build/
+!.mvn/wrapper/maven-wrapper.jar
+
+# --- STS / Eclipse ---
 .apt_generated
 .classpath
 .factorypath
@@ -13,23 +17,34 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
+# --- IntelliJ IDEA ---
 .idea
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# --- NetBeans ---
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+# --- VS Code ---
 .vscode/
-# Ignore Spring config file
+
+# --- Spring config (nếu bạn không muốn commit) ---
 application.yml
+
+# --- Environment files (QUAN TRỌNG) ---
+# Ignore tất cả env thật, chỉ commit *.example
+.env
+.env.*
+*.env
+*.env.*
+!*.env.example
+!**/*.env.example
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db

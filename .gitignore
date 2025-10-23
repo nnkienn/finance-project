@@ -1,22 +1,31 @@
-# ----------------------------
-# Global
-# ----------------------------
+# ==========================
+# 🌍 Global
+# ==========================
 *.log
-*.env
+*.tmp
 *.DS_Store
-*.idea/
-*.iml
 *.swp
 *.swo
-node_modules/
-dist/
-tmp/
-out/
-coverage/
+*.iml
+*.iws
+*.ipr
+.idea/
+.vscode/
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# ----------------------------
-# Backend (Spring Boot)
-# ----------------------------
+# Ignore all .env except examples
+.env
+.env.*
+*.env
+*.env.*
+!*.env.example
+!**/*.env.example
+
+# ==========================
+# ⚙️ Backend (Spring Boot)
+# ==========================
 /backend/target/
 /backend/.mvn/
 /backend/.gradle/
@@ -25,27 +34,32 @@ coverage/
 /backend/.project
 /backend/.settings/
 /backend/.factorypath
+/backend/.sts4-cache
 
-# Ignore application secrets
+# Ignore application config secrets
 /backend/src/main/resources/application-*.yml
 /backend/src/main/resources/application-*.properties
 
-# ----------------------------
-# Frontend (Next.js)
-# ----------------------------
+# ==========================
+# 💻 Frontend (Next.js)
+# ==========================
 /frontend/.next/
 /frontend/node_modules/
 /frontend/out/
 /frontend/.vercel/
 /frontend/.turbo/
+/frontend/dist/
+/frontend/coverage/
 /frontend/.env.local
 /frontend/.env.development.local
 /frontend/.env.test.local
 /frontend/.env.production.local
 
-# ----------------------------
-# OS generated
-# ----------------------------
-Thumbs.db
-ehthumbs.db
-Desktop.ini
+# ==========================
+# 🧪 Misc
+# ==========================
+/test-output/
+/tmp/
+/dist/
+/out/
+/coverage/

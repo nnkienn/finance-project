@@ -9,8 +9,7 @@ interface Props {
   open: boolean;
   category: UserCategory | null;
   onClose: () => void;
-  onCreate: (payload: Omit<Transaction, "id">) => void; 
-  // 👆 truyền đúng type API (không cần id khi tạo mới)
+  onCreate: (payload: Omit<Transaction, "id">) => void;
 }
 
 export default function CategoryTransactionModal({
@@ -27,7 +26,6 @@ export default function CategoryTransactionModal({
     paymentMethod: "" as "CASH" | "BANK" | "CARD" | "",
   });
 
-  // Reset form khi đổi category
   useEffect(() => {
     if (category) {
       setForm({
@@ -50,7 +48,7 @@ export default function CategoryTransactionModal({
       transactionDate: new Date(form.date).toISOString(),
       type: form.type,
       paymentMethod: form.paymentMethod as "CASH" | "BANK" | "CARD",
-      userCategoryId: category.id, // 👈 ID của category
+      userCategoryId: category.id,
     };
 
     console.log("Create transaction payload:", payload);
@@ -81,14 +79,18 @@ export default function CategoryTransactionModal({
                   placeholder="e.g. Starbucks coffee"
                   value={form.note}
                   onChange={(e) => setForm({ ...form, note: e.target.value })}
-                  className="flex-1 px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none text-sm"
+                  className="flex-1 px-4 py-2 rounded-xl border border-gray-300 
+                             focus:ring-2 focus:ring-pink-400 outline-none text-sm 
+                             text-gray-900 placeholder:text-gray-400 bg-white"
                 />
                 <input
                   type="number"
                   placeholder="0"
                   value={form.amount}
                   onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  className="w-32 px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none text-sm text-right"
+                  className="w-32 px-4 py-2 rounded-xl border border-gray-300 
+                             focus:ring-2 focus:ring-pink-400 outline-none text-sm text-right 
+                             text-gray-900 placeholder:text-gray-400 bg-white"
                 />
               </div>
             </div>
@@ -102,7 +104,9 @@ export default function CategoryTransactionModal({
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none text-sm"
+                className="w-full px-4 py-2 rounded-xl border border-gray-300 
+                           focus:ring-2 focus:ring-pink-400 outline-none text-sm 
+                           text-gray-900 placeholder:text-gray-400 bg-white"
               />
             </div>
 
@@ -118,9 +122,10 @@ export default function CategoryTransactionModal({
                     type="button"
                     onClick={() => setForm({ ...form, type: t as any })}
                     className={`flex-1 py-2 mx-1 rounded-xl border text-sm font-medium transition 
-                      ${form.type === t
-                        ? "bg-pink-500 text-white border-pink-500 shadow"
-                        : "bg-gray-50 text-gray-600 border-gray-300 hover:bg-gray-100"
+                      ${
+                        form.type === t
+                          ? "bg-pink-500 text-white border-pink-500 shadow"
+                          : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
                       }`}
                   >
                     {t}
@@ -129,7 +134,7 @@ export default function CategoryTransactionModal({
               </div>
             </div>
 
-            {/* Payment */}
+            {/* Payment Method */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 Payment Method
@@ -139,7 +144,9 @@ export default function CategoryTransactionModal({
                 onChange={(e) =>
                   setForm({ ...form, paymentMethod: e.target.value as any })
                 }
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none text-sm"
+                className="w-full px-4 py-2 rounded-xl border border-gray-300 
+                           focus:ring-2 focus:ring-pink-400 outline-none text-sm 
+                           text-gray-900 placeholder:text-gray-400 bg-white"
               >
                 <option value="">Payment Method</option>
                 <option value="CASH">Cash</option>

@@ -5,7 +5,6 @@ import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
 import com.finance.auth.entity.User;
 import com.finance.auth.repository.UserRepository;
-import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -18,23 +17,16 @@ import java.util.Map;
 @Service
 public class CloudinaryService {
 
-    private static final Logger log = LoggerFactory.getLogger(CloudinaryService.class);
-    private final Cloudinary cloudinary;
-    private final UserRepository userRepository;
+	  private static final Logger log = LoggerFactory.getLogger(CloudinaryService.class);
+	    private final Cloudinary cloudinary;
+	    private final UserRepository userRepository;
 
-    public CloudinaryService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+	    public CloudinaryService(Cloudinary cloudinary, UserRepository userRepository) {
+	        this.cloudinary = cloudinary;           // <- inject từ bean
+	        this.userRepository = userRepository;
+	        log.info("✅ CloudinaryService initialized with account: {}", cloudinary.config.cloudName);
+	    }
 
-        // ✅ Tự load .env
-        Dotenv dotenv = Dotenv.load();
-        String cloudinaryUrl = dotenv.get("CLOUDINARY_URL");
-        if (cloudinaryUrl == null || cloudinaryUrl.isBlank()) {
-            throw new IllegalStateException("❌ CLOUDINARY_URL is missing in .env file");
-        }
-
-        this.cloudinary = new Cloudinary(cloudinaryUrl);
-        log.info("✅ CloudinaryService initialized with account: {}", cloudinary.config.cloudName);
-    }
 
     @SuppressWarnings("unchecked")
     public String uploadAvatar(MultipartFile file, Authentication authentication) {

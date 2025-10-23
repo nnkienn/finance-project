@@ -5,26 +5,43 @@ import { useAppDispatch } from "@/hook/useAppDispatch";
 import { useAppSelector } from "@/hook/useAppSelector";
 import { fetchAllTotals } from "@/store/slice/transactionSlice";
 
-export default function CardInfo() {
+export type CardInfoProps = {
+  name?: string;
+  number?: string;
+  holder?: string;
+  expiry?: string;
+  balance?: number;
+  up?: number;
+  down?: number;
+  currency?: string;
+  status?: string;
+};
+
+export default function CardInfo({
+  name = "Knance",
+  number = "1234 1234 1234 1234",
+  holder = "OMI GUSTY",
+  expiry = "06/24",
+  balance, // nếu truyền sẽ override
+  currency = "USD / US Dollar",
+  status = "Active",
+}: CardInfoProps) {
   const dispatch = useAppDispatch();
-  const { totalIncome, totalExpense, totalSaving, totalsLoading } = useAppSelector(
-    (s) => s.transactions
-  );
+  const { totalIncome, totalExpense, totalSaving, totalsLoading } =
+    useAppSelector((s) => s.transactions);
 
   useEffect(() => {
     dispatch(fetchAllTotals());
   }, [dispatch]);
 
-  const myBalance = totalIncome - totalExpense - totalSaving;
+  const computedBalance = totalIncome - totalExpense - totalSaving;
+  const myBalance = balance ?? computedBalance;
 
   return (
     <div className="flex flex-col items-start gap-4">
       {/* CREDIT CARD */}
       <div className="relative h-[180px] w-[300px] rounded-2xl p-5 text-white shadow-md overflow-hidden">
-        {/* Gradient background */}
         <div className="absolute inset-0 bg-gradient-to-tr from-[#7B2CBF] via-[#FF3CAC] to-[#784BA0]" />
-
-        {/* Pattern overlay */}
         <svg
           className="absolute inset-0 w-full h-full opacity-40"
           xmlns="http://www.w3.org/2000/svg"
@@ -40,11 +57,9 @@ export default function CardInfo() {
           </g>
         </svg>
 
-        {/* Card content */}
         <div className="relative flex flex-col h-full justify-between">
-          {/* Top row */}
           <div className="flex items-center justify-between text-sm font-semibold">
-            <span>Knance</span>
+            <span>{name}</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -57,27 +72,18 @@ export default function CardInfo() {
             </svg>
           </div>
 
-          {/* Middle */}
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide">
-            <span>OMI GUSTY</span>
-            <span>06/24</span>
+            <span>{holder}</span>
+            <span>{expiry}</span>
           </div>
 
-          {/* Card number */}
           <p className="text-[18px] font-[600] tracking-[0.25em] font-mono">
-            1234 1234 1234 1234
+            {number}
           </p>
         </div>
 
-        {/* Badge */}
         <div className="absolute bottom-4 right-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="50"
-            height="30"
-            viewBox="0 0 60 40"
-            className="opacity-90"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" width="50" height="30" viewBox="0 0 60 40" className="opacity-90">
             <polygon points="0,40 10,0 20,0 10,40" fill="#f9c87c" />
             <polygon points="15,40 25,0 35,0 25,40" fill="#ffa433" />
             <polygon points="30,40 40,0 50,0 40,40" fill="#ff6b00" />
@@ -103,13 +109,11 @@ export default function CardInfo() {
         <div className="flex justify-between text-sm">
           <div>
             <span className="text-gray-500 block">Currency</span>
-            <span className="font-semibold text-gray-700">
-              USD / US Dollar
-            </span>
+            <span className="font-semibold text-gray-700">{currency}</span>
           </div>
           <div>
             <span className="text-gray-500 block">Status</span>
-            <span className="font-semibold text-green-600">Active</span>
+            <span className="font-semibold text-green-600">{status}</span>
           </div>
         </div>
       </div>

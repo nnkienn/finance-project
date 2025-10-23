@@ -1,0 +1,90 @@
+# ==========================================
+# 🚀 FINANCE PROJECT – Dev Docker Compose
+# Backend (Spring Boot) + Frontend (Next.js) + Kafka (KRaft mode)
+# ==========================================
+
+services:
+  # =========================
+  # 🧩 Kafka (KRaft mode)
+  # =========================
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    env_file:
+      - .env.dev
+    environment:
+      # Core KRaft config (no Zookeeper)
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      # Cluster ID – phải tồn tại trong .env.dev
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+
+      # Fix lỗi InvalidReceiveException (tăng giới hạn message)
+      KAFKA_MESSAGE_MAX_BYTES: 200000000
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 200000000
+
+    ports:
+      - "9092:9092"
+    restart: unless-stopped
+    networks:
+      - finance_net
+
+  # =========================
+  # ⚙️ Backend (Spring Boot)
+  # =========================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    depends_on:
+      - kafka
+    env_file:
+      - .env.dev
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    volumes:
+      - ./backend/.env.dev:/app/.env.dev:ro
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - finance_net
+
+  # =========================
+  # 💻 Frontend (Next.js)
+  # =========================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_WS_BASE_URL: http://localhost:8080/ws
+    ports:
+      - "4000:3000" # Truy cập web tại http://localhost:4000
+    restart: unless-stopped
+    networks:
+      - finance_net
+
+# =========================
+# 🌐 Shared Docker network
+# =========================
+networks:
+  finance_net:
+    driver: bridge

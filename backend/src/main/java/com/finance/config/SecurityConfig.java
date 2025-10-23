@@ -1,9 +1,12 @@
 package com.finance.config;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletResponse; // ✅ thêm import này
+import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.ForwardedHeaderFilter;
 
 import com.finance.auth.service.CustomUserDetailsService;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -37,6 +41,10 @@ public class SecurityConfig {
         this.userDetailsService = userDetailsService;
     }
 
+    // ⬇️ Đọc danh sách origin từ ENV / application-*.yml (phân tách bằng dấu phẩy)
+    @Value("${app.cors.allowed-origins:*}")
+    private String allowedOriginsCsv;
+
     @Bean
     public RoleHierarchy roleHierarchy() {
         RoleHierarchyImpl rh = new RoleHierarchyImpl();
@@ -51,7 +59,6 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, RoleHierarchy roleHierarchy) {
-        // ✅ truyền thêm userDetailsService vào filter
         return new JwtAuthenticationFilter(jwtService, roleHierarchy, userDetailsService);
     }
 
@@ -75,26 +82,34 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-            	    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ preflight
-            	    .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
-            	    .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-            	    .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
-            	    .requestMatchers(HttpMethod.GET, "/auth/verify").permitAll()   // ✅ thêm dòng này
-                    // ✅ Cho phép WebSocket và SockJS handshake mà không cần login
-                    .requestMatchers("/ws/**").permitAll()
-                    .requestMatchers("/actuator/**").permitAll()
-            	    // ❌ bỏ "/auth/**"
-            	    .requestMatchers("/h2-console/**", "/error").permitAll()
-            	    .requestMatchers(HttpMethod.GET, "/").permitAll()
-            	    .requestMatchers("/admin/**").hasRole("ADMIN")
-            	    // ✅ các request còn lại (bao gồm /auth/change-password, /me) cần token
-            	    .anyRequest().authenticated()
-            	)
-
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // preflight
+                // Auth
+                .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login", "/auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.GET, "/auth/verify").permitAll()
+                // WebSocket/SockJS
+                .requestMatchers("/ws/**").permitAll()
+                // Swagger (nếu cần dùng ở prod thì để, không thì bỏ)
+                .requestMatchers(
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
+                ).permitAll()
+                // Actuator: chỉ mở health/info
+                .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+                // H2-console: chỉ dev, KHÔNG nên mở prod. Có thể để lại nhưng ràng buộc bằng profile.
+                .requestMatchers("/h2-console/**").denyAll()
+                // Trang root
+                .requestMatchers(HttpMethod.GET, "/").permitAll()
+                // Admin
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // Còn lại bắt buộc có JWT
+                .anyRequest().authenticated()
+            )
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin()) // để không lỗi iframe (chỉ cần cho H2/dev)
+            )
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            // ✅ trả 401 khi chưa xác thực, 403 khi thiếu quyền
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {
                     res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -121,11 +136,18 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // ✅ CORS đọc từ ENV: app.cors.allowed-origins
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        List<String> origins = Arrays.stream(allowedOriginsCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*"));
+        // Dùng AllowedOriginPatterns để chấp nhận wildcard (http://localhost:*)
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
@@ -133,5 +155,11 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    // ✅ Để Spring tin tưởng X-Forwarded-* khi chạy sau ALB/Nginx
+    @Bean
+    public ForwardedHeaderFilter forwardedHeaderFilter() {
+        return new ForwardedHeaderFilter();
     }
 }
