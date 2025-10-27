@@ -51,7 +51,7 @@ public class AuthController {
 			UserRepository userRepository, RoleRepository roleRepository,
 			EmailVerificationTokenRepository tokenRepository,
 			org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
-			com.finance.notification.kafka.NotificationEventPublisher notificationEventPublisher // ✅ thêm dòng này
+			com.finance.notification.kafka.NotificationEventPublisher notificationEventPublisher 
 	) {
 		this.authenticationManager = authenticationManager;
 		this.jwtService = jwtService;
@@ -59,7 +59,7 @@ public class AuthController {
 		this.roleRepository = roleRepository;
 		this.tokenRepository = tokenRepository;
 		this.passwordEncoder = passwordEncoder;
-		this.notificationEventPublisher = notificationEventPublisher; // ✅ và gán
+		this.notificationEventPublisher = notificationEventPublisher; 
 	}
 
 	@PostMapping("/register")
@@ -101,7 +101,7 @@ public class AuthController {
 		        .type("user.registered")
 		        .title("Xác minh tài khoản của bạn")
 		        .body("Cảm ơn bạn đã đăng ký Knance! Nhấn vào link để xác minh tài khoản.")
-		        .payload(new ObjectMapper().valueToTree(payload))   // ✅ thêm dòng này
+		        .payload(new ObjectMapper().valueToTree(payload))  
 		        .channel("EMAIL")
 		        .build()
 		);

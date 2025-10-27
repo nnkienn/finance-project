@@ -1,0 +1,11 @@
+﻿apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: finance
+data:
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_SHOW_SQL: "false"
+  SPRING_PROFILES_ACTIVE: gmail
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  SERVER_PORT: "8080"

@@ -3,63 +3,106 @@
 # ==========================
 *.log
 *.tmp
-*.DS_Store
 *.swp
 *.swo
+*.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / Editor
+.idea/
+.vscode/
 *.iml
 *.iws
 *.ipr
-.idea/
-.vscode/
-Thumbs.db
-ehthumbs.db
-Desktop.ini
 
-# Ignore all .env except examples
+# ==========================
+# 🔐 Environment files
+#   (giữ lại file mẫu *.example)
+# ==========================
 .env
 .env.*
 *.env
 *.env.*
-!*.env.example
+!.env.example
 !**/*.env.example
 
 # ==========================
 # ⚙️ Backend (Spring Boot)
 # ==========================
 /backend/target/
-/backend/.mvn/
-/backend/.gradle/
 /backend/build/
+/backend/.gradle/
 /backend/.classpath
 /backend/.project
 /backend/.settings/
 /backend/.factorypath
 /backend/.sts4-cache
 
-# Ignore application config secrets
+# Không commit file cấu hình chứa secret
 /backend/src/main/resources/application-*.yml
+/backend/src/main/resources/application-*.yaml
 /backend/src/main/resources/application-*.properties
+# Giữ file cấu hình chung (inject bằng ENV)
+/backend/src/main/resources/application.yaml
+
+# Keystore / certs
+**/*.jks
+**/*.p12
+**/*.keystore
 
 # ==========================
 # 💻 Frontend (Next.js)
 # ==========================
-/frontend/.next/
 /frontend/node_modules/
+/frontend/.next/
 /frontend/out/
 /frontend/.vercel/
 /frontend/.turbo/
 /frontend/dist/
 /frontend/coverage/
+
+# Local env của Next (không đẩy)
 /frontend/.env.local
 /frontend/.env.development.local
 /frontend/.env.test.local
 /frontend/.env.production.local
 
+# Khóa phụ thuộc (GIỮ để build reproducible)
+# (chỉ note: không thêm rule ignore cho các file này)
+# /frontend/package-lock.json
+# /frontend/pnpm-lock.yaml
+# /frontend/yarn.lock
+
+# ==========================
+# 🐳 Docker
+# ==========================
+*.tar
+docker-compose.override.yml
+docker-compose.dev.yml
+.docker/
+**/.env.docker.local
+
+# ==========================
+# ☸️ Kubernetes
+#   - Không push secret thật
+#   - Giữ file mẫu *.example.yaml
+# ==========================
+k8s/**/secret*.yml
+k8s/**/secret*.yaml
+k8s/**/secrets*.yml
+k8s/**/secrets*.yaml
+!k8s/**/*.example.yml
+!k8s/**/*.example.yaml
+
+# Nếu có file values/dev-local riêng
+k8s/**/dev-local*.yaml
+k8s/**/dev-local*.yml
+
 # ==========================
 # 🧪 Misc
 # ==========================
-/test-output/
+/coverage/
 /tmp/
 /dist/
 /out/
-/coverage/
